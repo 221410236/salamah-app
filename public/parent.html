@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Salamah - Parent</title>
+
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    #map { width:100%; height:60vh; border-radius:12px; overflow:hidden; }
+  </style>
+</head>
+<body>
+  <header class="appbar small">
+    <div class="brand-inline">
+      <img src="images/salamah logo.png" alt="logo" style="height: 70px; width: auto; margin-right: 12px;" />
+      <div>
+        <h1>Parent</h1>
+        <p class="sub">Live Bus Tracking</p>
+      </div>
+    </div>
+    <nav>
+      <button class="btn ghost" onclick="Auth.logout()">Logout</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <h2>Child & Bus Details</h2>
+      <div id="childDetails" class="kv"></div>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <h2>Live Map</h2>
+      <div id="map"></div>
+    </div>
+  </main>
+
+<script src="js/app.js"></script>
+<script src="js/parent.js"></script>
+</body>
+</html>

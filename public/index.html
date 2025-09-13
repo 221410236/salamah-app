@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Salamah - Login</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="centered">
+  <div class="card w-420">
+    <div class="brand">
+      <img src="images/salamah logo.png" alt="Salamah" style="width: 250px; height: auto; display: block; margin: 0 auto;" />
+    </div>
+
+    <h2>Sign in</h2>
+    <form id="loginForm">
+      <label>Role
+        <select id="role" required>
+          <option value="parent">Parent</option>
+          <option value="driver">Driver</option>
+          <option value="admin">Admin</option>
+        </select>
+      </label>
+
+      <label>Username
+        <input id="username" type="text" required autocomplete="username"/>
+      </label>
+
+      <label>Password
+        <input id="password" type="password" required autocomplete="current-password"/>
+      </label>
+
+      <button type="submit" class="btn">Login</button>
+    </form>
+
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    // updated login: await the async Auth.login
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const role = document.getElementById('role').value;
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      try {
+        const ok = await window.Auth.login(role, username, password);
+        if (!ok.success) {
+          alert(ok.message || 'Invalid credentials');
+          return;
+        }
+
+        if (role === 'admin') location.href = 'admin.html';
+        if (role === 'parent') location.href = 'parent.html';
+        if (role === 'driver') location.href = 'driver.html';
+      } catch (err) {
+        alert('Login failed: ' + (err.message || err));
+      }
+    });
+  </script>
+</body>
+</html>

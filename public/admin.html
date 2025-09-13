@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Salamah - Admin</title>
+
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .split { display:grid; grid-template-columns: 280px 1fr; gap:12px; height: calc(100vh - 80px); }
+    .panel { display:flex; flex-direction:column; gap:10px; }
+    .sidebar-btn { text-align:left; width:100%; cursor:pointer; }
+    .hidden { display:none; }
+     #map { width: 100%;; height: 600px;; border-radius:12px; overflow:hidden; }
+    .tabpanel { display:none; }
+    .tabpanel.active { display:block; }
+    .muted { color:#666; font-size:13px; }
+  </style>
+</head>
+<body>
+  <header class="appbar small">
+    <div class="brand-inline">
+      <img src="images/salamah logo.png" alt="logo" style="height: 70px; width: auto; margin-right: 12px;"/>
+      <div>
+        <h1>Admin</h1>
+        <p class="sub">Dashboard</p>
+      </div>
+    </div>
+    <nav>
+      <button class="btn ghost" onclick="Auth.logout()">Logout</button>
+    </nav>
+  </header>
+
+  <main class="container split">
+    <!-- Sidebar -->
+    <div class="card panel">
+      <h2>Admin Actions</h2>
+      <button class="btn sidebar-btn" onclick="showSection('accountsSection')">View Accounts</button>
+      <button class="btn sidebar-btn" onclick="showSection('createSection')">Create Accounts</button>
+      <button class="btn sidebar-btn" onclick="showSection('assignSection')">Assign Students to Buses</button>
+      <button class="btn sidebar-btn" onclick="showSection('mapSection')">Live Map</button>
+      <div style="margin-top:12px;" class="muted"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="card">
+      <!-- Accounts Section -->
+      <section id="accountsSection" class="section hidden">
+        <h2>Accounts</h2>
+        <div class="tabs">
+          <button data-tab="admins" class="tab active">Admins</button>
+          <button data-tab="parents" class="tab">Parents</button>
+          <button data-tab="drivers" class="tab">Drivers</button>
+        </div>
+        <div id="tab-admins" class="tabpanel active"><table id="adminsTable" class="table"></table></div>
+        <div id="tab-parents" class="tabpanel"><table id="parentsTable" class="table"></table></div>
+        <div id="tab-drivers" class="tabpanel"><table id="driversTable" class="table"></table></div>
+      </section>
+
+      <!-- Create Section -->
+      <section id="createSection" class="section hidden">
+        <h2>Create Account</h2>
+        <form id="createForm" class="grid-2 gap-16">
+          <label>Role
+            <select id="c_role" required>
+              <option value="admin">Admin</option>
+              <option value="parent">Parent</option>
+              <option value="driver">Driver</option>
+            </select>
+          </label>
+          <label>Name <input id="c_name" required /></label>
+          <label>Email <input id="c_email" type="email" required /></label>
+          <label>Password <input id="c_password" type="password" required /></label>
+          <label>Phone <input id="c_phone" /></label>
+
+          <!-- Admin fields -->
+          <div id="adminFields" class="span-2 hidden">
+            <label>Admin ID <input id="c_admin_id" /></label>
+          </div>
+
+          <!-- Driver fields -->
+          <div id="driverFields" class="span-2 hidden">
+            <label>Driver ID <input id="c_driver_id" /></label>
+            <label>License Number <input id="c_license" /></label>
+            <label>Assigned Bus ID <input id="c_driver_bus" /></label>
+          </div>
+
+          <!-- Parent fields -->
+          <div id="parentFields" class="span-2 hidden">
+            <label>Parent ID <input id="c_parent_id" /></label>
+            <div>
+              <h3>Students</h3>
+              <div id="studentsList"></div>
+              <div class="small-inline" style="margin-top:8px;">
+                <button type="button" class="btn" onclick="addStudentField()">+ Add Student</button>
+                <div class="muted">Each student needs Name & ID</div>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn span-2">Create</button>
+        </form>
+      </section>
+
+      <!-- Assign Section -->
+      <section id="assignSection" class="section hidden">
+        <h2>Assign Students to Buses</h2>
+        <p>(Coming soon)</p>
+      </section>
+
+      <!-- Live Map Section -->
+      <section id="mapSection" class="section">
+        <h2>Live Map</h2>
+        <div id="map"></div>
+      </section>
+    </div>
+  </main>
+
+<script>
+  // Function to switch between sections
+  function showSection(sectionId) {
+    document.querySelectorAll(".section").forEach(s => s.classList.add("hidden"));
+    document.getElementById(sectionId).classList.remove("hidden");
+  }
+
+  // Optional: handle tab switching inside accounts
+  document.querySelectorAll('.tabs button').forEach(tabBtn => {
+    tabBtn.addEventListener('click', () => {
+      const parent = tabBtn.closest('.tabs');
+      parent.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      tabBtn.classList.add('active');
+
+      const tabpanels = parent.parentElement.querySelectorAll('.tabpanel');
+      tabpanels.forEach(panel => panel.classList.remove('active'));
+      const target = parent.parentElement.querySelector('#tab-' + tabBtn.dataset.tab);
+      if(target) target.classList.add('active');
+    });
+  });
+
+  // Show Live Map by default
+  showSection('mapSection');
+</script>
+
+<script src="js/app.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
