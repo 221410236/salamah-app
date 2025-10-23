@@ -1,0 +1,107 @@
+<!-- presentation/html/login.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Salamah - Login</title>
+  <link rel="stylesheet" href="/css/styles.css">
+
+</head>
+<body class="centered">
+  <div id="alertBox" class="alert-box hidden">
+    <div class="alert-content">
+      <span id="alertMessage"></span>
+      <button onclick="hideAlert()">✖</button>
+    </div>
+  </div>
+
+  <div class="card w-420">
+    <div class="brand">
+      <img src="/images/salamah logo.png" alt="Salamah" style="width: 250px; height: auto; display: block; margin: 0 auto;" />
+    </div>
+
+    <h2>Sign in</h2>
+    <form id="loginForm">
+      <label>Role
+        <select id="role" required>
+          <option value="parent">Parent</option>
+          <option value="driver">Driver</option>
+          <option value="admin">Admin</option>
+        </select>
+      </label>
+
+      <label>Username
+        <input id="username" type="text" required autocomplete="username"/>
+      </label>
+
+      <label>Password
+        <div style="position: relative;">
+          <input id="password" type="password" required autocomplete="current-password" style="width: 100%; padding-right: 2.5rem;"/>
+          <button type="button" id="togglePassword" style="position:absolute; right:5px; top:50%; transform:translateY(-50%); border:none; background:none; cursor:pointer;">
+            <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="#004aad" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+      </label>
+
+      <button type="submit" class="btn">Login</button>
+    </form>
+
+    <div class="forgot-password" style="margin-top:16px; text-align:center; font-size:14px; color: var(--muted);">
+      <p>Forgot your password? Please contact your admin to reset it.</p>
+      <p>
+        <a href="mailto:SalamahHelp@gmail.com?subject=Password%20Reset%20Request&body=Hello%20Admin,%0D%0A%0D%0AI%20forgot%20my%20Salamah%20login%20password.%20Please%20help%20me%20reset%20it.%0D%0A%0D%0AThank%20you.%0D%0A%0D%0AName:%20[Your%20Name]%0D%0AUsername:%20[Your%20Username]" 
+           style="color: var(--brand); text-decoration: none;">
+           Contact Admin
+        </a>
+      </p>
+    </div>
+  </div>
+
+  <script src="/js/messages.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const role = document.getElementById('role').value;
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      try {
+        const ok = await window.Auth.login(role, username, password);
+        if (!ok.success) {
+          showError(parseError(ok) || 'Invalid credentials');
+          return;
+        }
+
+        showSuccess('Login successful! Redirecting...');
+        setTimeout(() => {
+          if (role === 'admin') location.href = '/html/admin.html';
+          if (role === 'parent') location.href = '/html/parent.html';
+          if (role === 'driver') location.href = '/html/driver.html';
+        }, 1000);
+
+      } catch (err) {
+        showError('Login failed: ' + parseError(err));
+      }
+    });
+
+    const passwordInput = document.getElementById('password');
+    const toggleBtn = document.getElementById('togglePassword');
+    const eyeIcon = document.getElementById('eyeIcon');
+
+    toggleBtn.addEventListener('click', () => {
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        eyeIcon.innerHTML = '<path d="M17.94 17.94A10.95 10.95 0 0 1 12 20c-7 0-11-8-11-8a20.33 20.33 0 0 1 5.06-5.94M1 1l22 22"/>';
+      } else {
+        passwordInput.type = 'password';
+        eyeIcon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+      }
+    });
+  </script>
+</body>
+</html>

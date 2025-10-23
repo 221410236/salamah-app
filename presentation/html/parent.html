@@ -1,0 +1,231 @@
+<!-- presentation/html/parent.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Salamah - Parent</title>
+
+  <!-- Mapbox -->
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/messages.js"></script>
+  <link rel="stylesheet" href="/css/styles.css" />
+
+  <style>
+    /* Layout */
+    .split {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 12px;
+      height: calc(100vh - 80px);
+    }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sidebar-btn {
+      text-align: left;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #map {
+      width: 100%;
+      height: 600px;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    /* Notification */
+    .notif-bell {
+      position: relative;
+      cursor: pointer;
+      font-size: 22px;
+    }
+    .notif-count {
+      position: absolute;
+      top: -6px;
+      right: -10px;
+      background: red;
+      color: white;
+      font-size: 12px;
+      padding: 2px 5px;
+      border-radius: 50%;
+    }
+    .notif-dropdown {
+      position: absolute;
+      top: 60px;
+      right: 0;
+      width: 300px;
+      max-height: 400px;
+      overflow-y: auto;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      z-index: 999;
+    }
+
+    /* Child Details */
+    #childDetails {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 15px;
+    }
+
+    .child-box {
+      background: #fffdf5;
+      border: 1px solid #f7c948;
+      border-radius: 10px;
+      padding: 12px 16px;
+      line-height: 1.5;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      transition: transform 0.15s ease;
+    }
+
+    .child-box:hover {
+      transform: translateY(-3px);
+    }
+
+    /* QR Cards */
+    .qr-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 20px;
+      justify-items: center;
+      margin-top: 10px;
+    }
+
+    .qr-card {
+      width: 340px;
+      background: #fff;
+      border-radius: 12px;
+      border: 2px solid #f7c948;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 18px;
+      text-align: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .qr-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+    }
+
+    .qr-img {
+      width: 240px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .btn.small {
+      background-color: #f7c948;
+      color: black;
+      font-weight: bold;
+      padding: 8px 18px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .btn.small:hover {
+      background-color: #e0b733;
+    }
+
+    @media (max-width: 900px) {
+      .split {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+      #map {
+        height: 400px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="appbar small">
+    <div class="brand-inline">
+      <img src="/images/salamah logo.png" alt="logo" style="height: 70px; width: auto; margin-right: 12px;" />
+      <div>
+        <h1>Parent</h1>
+        <p class="sub">Dashboard</p>
+      </div>
+    </div>
+    <nav style="display:flex; align-items:center; gap:16px; position:relative;">
+      <div id="notifBell" class="notif-bell">
+        🔔 <span id="notifCount" class="notif-count">0</span>
+      </div>
+      <div id="notifDropdown" class="notif-dropdown hidden"></div>
+      <button class="btn ghost" onclick="Auth.logout()">Logout</button>
+    </nav>
+  </header>
+
+  <main class="container split">
+    <!-- Left Sidebar -->
+    <div class="card panel">
+      <h2>Parent Actions</h2>
+      <button class="btn sidebar-btn" onclick="showSection('detailsSection')">Child & Bus Details</button>
+      <button class="btn sidebar-btn" onclick="showSection('qrSection')">My Child’s QR Cards</button>
+      <button class="btn sidebar-btn" onclick="showSection('mapSection')">Live Map</button>
+    </div>
+
+    <!-- Right Main Panel -->
+    <div class="card">
+      <!-- Child & Bus Details -->
+      <section id="detailsSection" class="section hidden">
+        <h2>Child & Bus Details</h2>
+        <div id="childDetails" class="kv"></div>
+      </section>
+
+      <!-- QR Cards -->
+      <section id="qrSection" class="section hidden">
+        <h2>My Child’s QR Cards</h2>
+        <p class="muted">Scan this code when boarding or exiting the bus.</p>
+        <div id="parentQrContainer" class="qr-cards-grid"></div>
+      </section>
+
+      <!-- Live Map -->
+      <section id="mapSection" class="section">
+        <h2>Live Map</h2>
+        <div id="map"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script src="/js/app.js"></script>
+  <script src="/js/parent.js"></script>
+
+  <script>
+    function showSection(sectionId) {
+      document.querySelectorAll(".section").forEach(s => s.classList.add("hidden"));
+      document.getElementById(sectionId).classList.remove("hidden");
+
+      if (sectionId === "qrSection") loadParentQrCards();
+    }
+
+    // Show Live Map by default
+    showSection('mapSection');
+  </script>
+
+  <div id="toastContainer"></div>
+  <div id="alertBox" class="alert-box hidden">
+    <div class="alert-content">
+      <span id="alertMessage"></span>
+      <button onclick="hideAlert()">✖</button>
+    </div>
+  </div>
+</body>
+</html>

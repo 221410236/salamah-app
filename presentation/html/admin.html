@@ -1,0 +1,476 @@
+<!-- // the page is  admin.html  -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Salamah - Admin</title>
+
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/messages.js"></script>
+
+  <link rel="stylesheet" href="/css/styles.css">
+
+  <style>
+    .split { display:grid; grid-template-columns: 280px 1fr; gap:12px; height: calc(100vh - 80px); }
+    .panel { display:flex; flex-direction:column; gap:10px; }
+    .sidebar-btn { text-align:left; width:100%; cursor:pointer; }
+    .hidden { display:none; }
+    #map { width:100%; height:600px; border-radius:12px; overflow:hidden; }
+    .tabpanel { display:none; }
+    .tabpanel.active { display:block; }
+    .muted { color:#666; font-size:13px; }
+
+    /* Manage Children Modal */
+    .modal {
+      position: fixed;
+      top: 0; left: 0; right:0; bottom:0;
+      background: rgba(0,0,0,0.6);
+      display:flex; justify-content:center; align-items:center;
+      z-index: 2000;
+    }
+    .modal.hidden { display:none; }
+    .modal-content {
+      background:#fff; padding:20px; border-radius:8px;
+      width:400px; max-width:90%;
+      box-shadow:0 2px 8px rgba(0,0,0,0.3);
+    }
+    .modal-content h3 { margin-top:0; }
+    .modal-content ul { padding-left:20px; }
+    .modal-content li { margin-bottom:6px; }
+    .modal-content .close {
+      float:right; cursor:pointer; font-size:18px;
+    }
+
+    /* Notifications */
+    .notif-bell {
+      position: relative;
+      cursor: pointer;
+      font-size: 22px;
+    }
+    .notif-count {
+      position: absolute;
+      top: -6px;
+      right: -10px;
+      background: red;
+      color: white;
+      font-size: 12px;
+      padding: 2px 5px;
+      border-radius: 50%;
+    }
+    .notif-dropdown {
+      position: absolute;
+      top: 60px;
+      right: 0;
+      width: 300px;
+      max-height: 400px;
+      overflow-y: auto;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      z-index: 999;
+    }
+    .notif-item {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      font-size: 14px;
+    }
+    .notif-item.unread {
+      background: #fce4e4;
+      font-weight: bold;
+    }
+
+    /* ---------- Assign Students Layout ---------- */
+    .assign-container {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      padding: 16px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background: #fafafa;
+    }
+
+    .assign-section {
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .assign-section h3 {
+      margin-top: 0;
+      color: #333;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 6px;
+      font-size: 1.1rem;
+    }
+
+    .dropdown {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #bbb;
+      font-size: 15px;
+    }
+
+    /* ---------- Search bar ---------- */
+    .search-bar {
+      width: 100%;
+      margin-top: 10px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #bbb;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .search-bar:focus {
+      border-color: #d4a017;
+      box-shadow: 0 0 0 2px rgba(212, 160, 23, 0.2);
+    }
+
+    /* ---------- Student list ---------- */
+    .student-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .student-list label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fdfdfd;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 8px 10px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .student-list label:hover {
+      background: #f8f8f8;
+    }
+
+    .assign-actions {
+      text-align: center;
+    }
+
+    .assign-actions .btn {
+      font-size: 16px;
+      padding: 10px 20px;
+    }
+
+    @media (max-width: 768px) {
+      .assign-container {
+        padding: 12px;
+      }
+      .student-list {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="appbar small">
+    <div class="brand-inline">
+      <img src="/images/salamah logo.png" alt="logo" style="height: 70px; width: auto; margin-right: 12px;"/>
+      <div>
+        <h1>Admin</h1>
+        <p class="sub">Dashboard</p>
+      </div>
+    </div>
+     <nav style="display:flex; align-items:center; gap:16px; position:relative;">
+      <!-- Notification Bell -->
+      <div id="notifBell" class="notif-bell">
+        🔔 <span id="notifCount" class="notif-count">0</span>
+      </div>
+      <div id="notifDropdown" class="notif-dropdown hidden"></div>
+
+      <!-- Logout Button -->
+      <button class="btn ghost" onclick="Auth.logout()">Logout</button>
+    </nav>
+  </header>
+
+  <main class="container split">
+    <!-- Sidebar -->
+    <div class="card panel">
+      <h2>Admin Actions</h2>
+      <button class="btn sidebar-btn" onclick="showSection('accountsSection')">View Accounts</button>
+      <button class="btn sidebar-btn" onclick="showSection('createSection')">Create Accounts</button>
+      <button class="btn sidebar-btn" onclick="showSection('assignSection')">Assign Students to Buses</button>
+      <button class="btn sidebar-btn" onclick="showSection('qrCardsSection')">View Student QR Cards</button>
+      <button class="btn sidebar-btn" onclick="showSection('attendanceSection')">Bus Attendance Logs</button>
+      <button class="btn sidebar-btn" onclick="showSection('busSection')">Add a Bus</button>
+      <button class="btn sidebar-btn" onclick="showSection('mapSection')">Live Map</button>
+      <div style="margin-top:12px;" class="muted"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="card">
+      <!-- Accounts Section -->
+      <section id="accountsSection" class="section hidden">
+        <h2>Accounts</h2>
+        <div class="tabs">
+          <button data-tab="admins" class="tab active">Admins</button>
+          <button data-tab="parents" class="tab">Parents</button>
+          <button data-tab="drivers" class="tab">Drivers</button>
+        </div>
+        <div id="tab-admins" class="tabpanel active"><table id="adminsTable" class="table"></table></div>
+        <div id="tab-parents" class="tabpanel"><table id="parentsTable" class="table"></table></div>
+        <div id="tab-drivers" class="tabpanel"><table id="driversTable" class="table"></table></div>
+      </section>
+
+      <!-- Create Section -->
+      <section id="createSection" class="section hidden">
+        <h2>Create Account</h2>
+        <form id="createForm" class="grid-2 gap-16">
+          <label>Role
+            <select id="c_role" required>
+              <option value="admin">Admin</option>
+              <option value="parent">Parent</option>
+              <option value="driver">Driver</option>
+            </select>
+          </label>
+          <label>Name <input id="c_name" pattern="[A-Za-z\s]+" title="Letters and spaces only" required /></label>
+          <label>Email <input id="c_email" type="email" required /></label>
+          <label>Password <input id="c_password" type="password" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}" title="At least 8 characters, uppercase, lowercase, numbers, and a special character" required /></label>
+          <label>Phone <input id="c_phone" pattern="^\+966\d{9}$" title="Phone number must start with +966 followed by 9 digits" required/></label>
+
+          <!-- Admin fields -->
+          <div id="adminFields" class="span-2 hidden">
+            <label>Admin username  <input id="c_admin_id" required pattern="^a\.[A-Za-z0-9]+$" title="Must start with 'a.' followed by letters/numbers" /></label>
+          </div>
+
+          <!-- Driver fields -->
+          <div id="driverFields" class="span-2 hidden">
+            <label>Driver username  <input id="c_driver_id" pattern="^d\.[A-Za-z0-9]+$" title="Must start with 'd.' followed by letters/numbers"  /></label>
+            <label>License Number <input id="c_license" maxlength="10" pattern="\d{10}" title="Must be 10 digits" required /></label>
+            <label>Assigned Bus ID
+              <select id="c_driver_bus">
+                <option value="">Select bus</option>
+              </select>
+            </label>
+          </div>
+
+          <!-- Parent fields -->
+          <div id="parentFields" class="span-2 hidden">
+            <label>Parent username 
+              <input id="c_parent_id" data-required pattern="^p\.[A-Za-z0-9]+$" title="Must start with 'p.' followed by letters/numbers" />
+            </label>
+            <label>Home Address 
+              <input id="c_parent_address" data-required placeholder="Home address" />
+            </label>
+            <small class="form-text text-muted">
+              Please enter full address in this format:<br>
+              <i>Street number + street name, neighborhood, city, province, country</i><br>
+              Example: 123 King Fahd Rd, Al Olaya, Riyadh, Riyadh Province, Saudi Arabia
+            </small>
+            <h3>Students</h3>
+            <div id="studentsList"></div>
+            <div class="small-inline" style="margin-top:8px;">
+              <button type="button" class="btn" onclick="addStudentField()">+ Add Student</button>
+              <div class="muted">Each student needs Name</div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn span-2">Create</button>
+        </form>
+      </section>
+
+      <!--  Redesigned Assign Section -->
+      <section id="assignSection" class="section hidden">
+        <h2>Assign Students to Bus</h2>
+
+        <div class="assign-container">
+          <!-- Select Bus -->
+          <div class="assign-section">
+            <h3>🚌 Select Bus</h3>
+            <select id="bus-select" class="dropdown"></select>
+          </div>
+
+          <!-- Unassigned Students -->
+          <div class="assign-section">
+            <h3>👧 Unassigned Students</h3>
+            <input type="text" id="studentSearch" class="search-bar" placeholder="🔍 Search by name or ID...">
+            <div id="students-list" class="student-list">
+              <!-- dynamically filled by JS -->
+            </div>
+          </div>
+
+          <!-- Assign Button -->
+          <div class="assign-actions">
+            <button id="assignBtn" class="btn" onclick="assignStudents()">Assign Selected Students</button>
+          </div>
+        </div>
+      </section>
+
+    </section>
+        <!-- 🧠 Student QR Cards Section -->
+       <section id="qrCardsSection" class="section hidden">
+       <h2> Student QR Cards</h2>
+       <p class="muted">
+        Each card shows the student's QR card, which can be scanned during boarding.
+       </p>
+      <div id="qrCardsContainer" class="qr-cards-grid">
+      <!-- Cards dynamically loaded by admin.js -->
+     </div>
+     </section>
+
+      <!-- Bus Section -->
+      <section id="busSection" class="section hidden">
+        <h2>Add a Bus</h2>
+        <form id="busForm" class="grid-2 gap-16">
+          <label>Bus ID
+            <input id="bus_id" placeholder="Auto-generated" readonly />
+          </label>
+          <div class="form-group">
+            <label for="plate_number">Plate Number:</label>
+            <input id="plate_number" name="plate_number" required maxlength="8" style="text-transform: uppercase; width:100%;" />
+          </div>
+          <label>Capacity
+            <input id="capacity" type="number" min="1" required />
+          </label>
+          <button type="submit" class="btn span-2">Add Bus</button>
+        </form>
+
+        <h3 style="margin-top:24px;">Buses</h3>
+        <table id="busTable" class="table">
+          <thead>
+            <tr>
+              <th>Bus ID</th>
+              <th>Plate Number</th>
+              <th>Capacity</th>
+              <th>Driver</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <!-- Attendance Section -->
+      <section id="attendanceSection" class="section hidden">
+        <h2>Bus Attendance Logs</h2>
+        <p class="muted">View boarding and drop-off activity by student.</p>
+
+        <div style="margin-bottom:10px;">
+          <input type="text" id="searchAttendance" class="search-bar" placeholder="🔍 Search by student ID, bus ID, or status...">
+        </div>
+
+        <table id="attendanceTable" class="table">
+          <thead>
+            <tr>
+              <th>Attendance ID</th>
+              <th>Student ID</th>
+              <th>Student Name</th>
+              <th>Bus ID</th>
+              <th>Plate Number</th>
+              <th>Status</th>
+              <th>Scan Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Filled dynamically by admin.js -->
+          </tbody>
+        </table>
+        <div id="attendancePagination" style="text-align:center; margin-top:12px;"></div>
+      </section>
+
+      <!-- Live Map Section -->
+      <section id="mapSection" class="section">
+        <h2>Live Map</h2>
+        <div id="map"></div>
+      </section>
+    </div>
+  </main>
+
+<script>
+  function showSection(sectionId) {
+  document.querySelectorAll(".section").forEach(s => s.classList.add("hidden"));
+  document.getElementById(sectionId).classList.remove("hidden");
+
+  // 🧠 Auto-load student QR cards when opening that section
+  if (sectionId === 'qrCardsSection') {
+    loadStudentQrCards();
+  }
+}
+  document.querySelectorAll('.tabs button').forEach(tabBtn => {
+    tabBtn.addEventListener('click', () => {
+      const parent = tabBtn.closest('.tabs');
+      parent.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      tabBtn.classList.add('active');
+
+      const tabpanels = parent.parentElement.querySelectorAll('.tabpanel');
+      tabpanels.forEach(panel => panel.classList.remove('active'));
+      const target = parent.parentElement.querySelector('#tab-' + tabBtn.dataset.tab);
+      if(target) target.classList.add('active');
+    });
+  });
+
+  showSection('mapSection');
+
+  // === Student Search Filter ===
+  document.getElementById("studentSearch")?.addEventListener("input", function() {
+    const query = this.value.toLowerCase();
+    document.querySelectorAll("#students-list label").forEach(label => {
+      const text = label.textContent.toLowerCase();
+      label.style.display = text.includes(query) ? "flex" : "none";
+    });
+  });
+</script>
+
+<script src="/js/app.js"></script>
+<script src="/js/admin.js"></script>
+
+<!-- Custom Alert Box -->
+<div id="alertBox" class="alert-box hidden">
+  <div class="alert-content">
+    <span id="alertMessage"></span>
+    <button onclick="hideAlert()">✖</button>
+  </div>
+</div>
+
+<!-- Confirm + Reset + Children Modal + Toast -->
+<div id="confirmBox" class="confirm-box hidden">
+  <div class="confirm-content">
+    <p id="confirmMessage">Are you sure?</p>
+    <div class="confirm-actions">
+      <button id="confirmYes" class="btn yes">Yes</button>
+      <button id="confirmNo" class="btn no">No</button>
+    </div>
+  </div>
+</div>
+
+<div id="resetBox" class="confirm-box hidden">
+  <div class="confirm-content">
+    <p id="resetMessage">Enter new password:</p>
+    <input id="resetInput" type="password" placeholder="New password" class="reset-input" />
+    <div class="confirm-actions">
+      <button id="resetOk" class="btn yes">Update</button>
+      <button id="resetCancel" class="btn no">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="childrenModal" class="modal hidden">
+  <div class="modal-content">
+    <span class="close" id="childrenClose">&times;</span>
+    <h3>Manage Children for <span id="parentName"></span></h3>
+    <ul id="childrenList"></ul>
+    <div style="margin-top:10px;">
+      <input type="text" id="childName" placeholder="Child Name" />
+      <button id="addChildBtn" class="btn">Add Child</button>
+    </div>
+  </div>
+</div>
+
+<div id="toastContainer"></div>
+</body>
+</html>

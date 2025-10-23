@@ -1,0 +1,29 @@
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files (contains credentials)
+.env
+
+# Uploads (QR cards, images, etc.)
+uploads/
+uploads/cards/
+
+# Logs
+*.log
+logs/
+
+# OS and Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Backup / temp files
+*.tmp
+*.bak
+
+#lock file 
+package-lock.json
