@@ -209,22 +209,30 @@ document.addEventListener("DOMContentLoaded", () => {
   let html5QrCode = null;
 
   async function sendScan(studentId) {
-    try {
-      const response = await fetch("http://localhost:5000/api/scan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentId, busId })
-      });
+  try {
+    const response = await fetch("http://localhost:5000/api/scan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ studentId, busId })
+    });
 
-      const data = await response.json();
-      resultEl.textContent = data.message || "Scan recorded successfully!";
+    const data = await response.json();
+
+    // If status code isn't OK (>=400), show as error
+    if (!response.ok) {
+      showError(data.message || "Scan failed");
+    } else {
       showSuccess(data.message || "Scan recorded successfully!");
-    } catch (error) {
-      console.error("Error sending scan:", error);
-      resultEl.textContent = "Error sending scan.";
-      showError("Error sending scan");
     }
+
+    resultEl.textContent = data.message || "Scan recorded successfully!";
+  } catch (error) {
+    console.error("Error sending scan:", error);
+    resultEl.textContent = "Error sending scan.";
+    showError("Error sending scan");
   }
+}
+
   
 let lastScanId = null;
 
