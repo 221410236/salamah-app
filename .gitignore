@@ -4,8 +4,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Environment files (contains credentials)
+# Environment files (contains credentials) + seed
 .env
+seed.js
 
 # Uploads (QR cards, images, etc.)
 uploads/
