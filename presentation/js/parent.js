@@ -52,7 +52,7 @@ socket.on('location', (data) => {
 
   if (!busMarker) {
     const el = document.createElement('div');
-    el.style.backgroundImage = 'url("images/bus.png")';
+    el.style.backgroundImage = 'url("/images/bus.png")';
     el.style.backgroundSize = 'cover';
     el.style.width = '40px';
     el.style.height = '40px';
