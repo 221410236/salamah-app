@@ -1,4 +1,3 @@
-// application/routes/adminRoutes.js
 const express = require("express");
 const QRCode = require("qrcode");
 const Student = require("../../data/models/Student");
@@ -11,51 +10,48 @@ const {
   deleteAccountByEmail,
   loginAdmin,
   generateStudentId,
-  assignStudentsToBus,
-  getBuses,
-  createBus,
-  getStudents,
   getAllStudentsWithCards,
   getParentById,
   addChildToParent,
   removeChildFromParent,
-  getUnassignedBuses,  
-  generateBusId,
-  deleteBus,
-  getAvailableBuses,
   viewAttendanceLogs
 } = require("../controllers/adminController");
+
+const { requireLogin, requireRole } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
 // Admin creates accounts
-router.post("/parents", createParent);
-router.post("/drivers", createDriver);
-router.post("/admins", createAdmin);
+// Requires admin authentication
+router.post("/parents", requireLogin, requireRole("admin"), createParent);
+router.post("/drivers", requireLogin, requireRole("admin"), createDriver);
+router.post("/admins", requireLogin, requireRole("admin"), createAdmin);
 
-// Admin login
+// Admin login (public route)
 router.post("/admins/login", loginAdmin);
 
 // Get combined accounts list 
-router.get("/accounts", getAccounts);
+// Requires admin authentication
+router.get("/accounts", requireLogin, requireRole("admin"), getAccounts);
 
 // Update password (role + email)
-router.put("/accounts/:role/:email/password", updatePasswordByEmail);
+// Requires admin authentication
+router.put("/accounts/:role/:email/password", requireLogin, requireRole("admin"), updatePasswordByEmail);
 
 // Delete account (role + email)
-router.delete("/accounts/:role/:email", deleteAccountByEmail);
+// Requires admin authentication
+router.delete("/accounts/:role/:email", requireLogin, requireRole("admin"), deleteAccountByEmail);
 
 // Generate student ID
-router.get("/generate-student-id", generateStudentId);
+// Requires admin authentication
+router.get("/generate-student-id", requireLogin, requireRole("admin"), generateStudentId);
 
-router.post("/assign-students-bus", assignStudentsToBus);
-router.get("/get-buses", getBuses);
-router.get("/get-students", getStudents);
-router.get("/get-all-students", require("../controllers/adminController").getAllStudentsWithCards);
+router.get("/get-all-students", requireLogin, requireRole("admin"), require("../controllers/adminController").getAllStudentsWithCards);
 
 
 //  Create New Student (Auto-generate QR code)
-router.post("/students", async (req, res) => {
+// Requires admin authentication
+router.post("/students", requireLogin, requireRole("admin"), async (req, res) => {
   try {
     const { student_id, name, parent_id, assigned_bus_id, home_location_id } = req.body;
 
@@ -86,33 +82,14 @@ router.post("/students", async (req, res) => {
 });
 
 
-router.post("/buses", createBus);
-
 // --- Manage Children Feature ---
-router.get("/parents/:parentId", getParentById);
-router.post("/parents/:parentId/children", addChildToParent);
-router.delete("/parents/:parentId/children/:childId", removeChildFromParent);
-
-// Get unassigned buses for driver assignment
-router.get("/buses/unassigned", getUnassignedBuses);
-
-//  Get unassigned drivers for bus assignment
-router.get("/drivers/unassigned", require("../controllers/adminController").getUnassignedDrivers);
-
-router.get("/generate-bus-id", generateBusId);
-
-//  Assign a driver to a specific bus
-router.post("/buses/:bus_id/assign-driver", require("../controllers/adminController").assignDriverToBus);
-
-// Unassign a driver from a specific bus
-router.put("/buses/:bus_id/unassign-driver", require("../controllers/adminController").unassignDriverFromBus);
-
-router.delete("/buses/:bus_id", deleteBus);
-
-// Get available buses for student assignment
-router.get("/available-buses", getAvailableBuses);
+// Requires admin authentication
+router.get("/parents/:parentId", requireLogin, requireRole("admin"), getParentById);
+router.post("/parents/:parentId/children", requireLogin, requireRole("admin"), addChildToParent);
+router.delete("/parents/:parentId/children/:childId", requireLogin, requireRole("admin"), removeChildFromParent);
 
 // View attendance logs
-router.get("/attendance-logs", viewAttendanceLogs);
+// Requires admin authentication
+router.get("/attendance-logs", requireLogin, requireRole("admin"), viewAttendanceLogs);
 
 module.exports = router;

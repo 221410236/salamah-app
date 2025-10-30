@@ -16,23 +16,29 @@ const Attendance = require("../../data/models/Attendance");
 const mbxGeocoding = require('@mapbox/mapbox-sdk/services/geocoding');
 const geocoder = mbxGeocoding({ accessToken: process.env.MAPBOX_TOKEN });
 
-// ---  Generate Bus ID ---
-function generateBusId() {
-  const randomNumbers = Math.floor(1000 + Math.random() * 9000); 
-  return `BUS${randomNumbers}`;
+// --- Generate Unique Student ID ---
+async function generateStudentId() {
+  let studentId;
+  let exists = true;
+
+  while (exists) {
+    const randomNumbers = Math.floor(10000 + Math.random() * 90000);
+    studentId = `STU${randomNumbers}`;
+
+    // Check if the generated ID already exists in the DB
+    const existingStudent = await Student.findOne({ student_id: studentId }).lean();
+    exists = !!existingStudent;
+  }
+
+  return studentId;
 }
 
-// --- Helper: Generate Student ID ---
-function generateStudentId() {
-  const randomNumbers = Math.floor(10000 + Math.random() * 90000); 
-  return `STU${randomNumbers}`;
-}
-
-exports.generateStudentId = (req, res) => {
+exports.generateStudentId = async (req, res) => {
   try {
-    const newStudentId = generateStudentId();
+    const newStudentId = await generateStudentId(); // await because async
     res.json({ student_id: newStudentId });
   } catch (err) {
+    console.error("Error generating student ID:", err);
     res.status(500).json({ error: "Failed to generate student ID" });
   }
 };
@@ -48,18 +54,33 @@ exports.loginAdmin = async (req, res) => {
     const match = await bcrypt.compare(password, admin.password);
     if (!match) return res.status(400).json({ error: "Invalid password" });
 
+    // Create secure session
+    req.session.user = {
+      _id: admin._id,
+      role: "admin",
+      admin_id: admin.admin_id,
+      username: admin.username,
+    };
+
+    // Include _id and role in the response for the frontend
     res.json({
       message: "Admin login successful",
       user: {
-        _id: admin._id,
-        admin_id: admin.admin_id,
+        _id: admin._id,       
+        role: "admin",
         username: admin.username,
-      }
+        admin_id: admin.admin_id,
+        email: admin.email,
+        name: admin.name
+      },
     });
   } catch (err) {
+    console.error("Admin login error:", err);
     res.status(500).json({ error: err.message });
   }
 };
+
+
 
 /* ---------- Create Admin ---------- */
 exports.createAdmin = async (req, res) => {
@@ -231,62 +252,6 @@ exports.createParent = async (req, res) => {
   }
 };
 
-
-/* ---------- Create Bus ---------- */
-exports.createBus = async (req, res) => {
-  try {
-    const { bus_id, plate_number, capacity, driver_id } = req.body;
-
-    if (!plate_number || !capacity) {
-      return res.status(400).json({ error: "Plate number and capacity are required" });
-    }
-
-    // Generate ID if not provided
-    const newBusId = bus_id || await generateBusId();
-
-    // Check if bus already exists
-    const exists = await Bus.findOne({ bus_id: newBusId });
-    if (exists) {
-      return res.status(400).json({ error: "Bus ID already exists" });
-    }
-
-    const bus = new Bus({
-      bus_id: newBusId,
-      plate_number,
-      capacity,
-      driver_id: driver_id || null
-    });
-
-    await bus.save();
-    res.status(201).json({ message: "Bus created successfully", bus });
-  } catch (err) {
-    console.error("createBus error:", err);
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// Get Unassigned Buses for Driver Assignment
-exports.getUnassignedBuses = async (req, res) => {
-  try {
-    const buses = await Bus.find({ driver_id: null }); // only unassigned buses
-    res.json(
-      buses.map(b => ({
-        _id: b._id,                 
-        bus_id: b.bus_id,           
-        plate_number: b.plate_number,
-        capacity: b.capacity
-      }))
-    );
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch unassigned buses" });
-  }
-};
-
-
-
-
-
 /* ---------- Get Accounts ---------- */
 exports.getAccounts = async (req, res) => {
   try {
@@ -399,9 +364,13 @@ exports.removeChildFromParent = async (req, res) => {
     );
     await parent.save();
 
+    //  Delete all attendance records linked to this student
+    const Attendance = require("../../data/models/Attendance");
+    await Attendance.deleteMany({ student_ref: student._id });
+
     await Student.deleteOne({ _id: student._id });
 
-    res.json({ message: "Child removed" });
+    res.json({ message: "Child and related attendance records removed" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -447,7 +416,6 @@ exports.updatePasswordByEmail = async (req, res) => {
 };
 
 
-
 /* ---------- Delete Account By Email ---------- */
 exports.deleteAccountByEmail = async (req, res) => {
   try {
@@ -483,233 +451,6 @@ exports.deleteAccountByEmail = async (req, res) => {
 };
 
 
-/* ---------- Assign Students to Bus ---------- */
-exports.assignStudentsToBus = async (req, res) => {
-  try {
-    const { bus_id, student_ids } = req.body;
-
-    if (!bus_id || !Array.isArray(student_ids) || student_ids.length === 0) {
-      return res.status(400).json({ error: "bus_id and student_ids[] are required" });
-    }
-
-    // check bus exists
-    const bus = await Bus.findOne({ bus_id });
-    if (!bus) return res.status(404).json({ error: "Bus not found" });
-
-    // update each student
-    const updated = await Promise.all(
-      student_ids.map(async sid => {
-        return await Student.findOneAndUpdate(
-          { student_id: sid },
-          { assigned_bus_id: bus._id },
-          { new: true }
-        ).lean();
-      })
-    );
-
-    res.json({
-      message: `Assigned ${updated.length} student(s) to bus ${bus_id}`,
-      students: updated
-    });
-  } catch (err) {
-    console.error("assignStudentsToBus error:", err);
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// to fetch buses/students for UI
-exports.getBuses = async (req, res) => {
-  try {
-    const buses = await Bus.find()
-      .populate("driver_id", "name email phone_number") // populate driver info
-      .lean();
-
-    res.json(
-      buses.map(b => ({
-        _id: b._id,
-        bus_id: b.bus_id,
-        plate_number: b.plate_number,
-        capacity: b.capacity,
-        driver: b.driver_id
-          ? { _id: b.driver_id._id, name: b.driver_id.name, email: b.driver_id.email }
-          : null
-      }))
-    );
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch buses" });
-  }
-};
-
-
-exports.getStudents = async (req, res) => {
-  try {
-    const parents = await Parent.find().populate("children").lean();
-
-    // flatten all children
-    const students = parents.flatMap(p =>
-      (p.children || []).map(c => ({
-        student_id: c.student_id,
-        name: c.name,
-        assigned_bus_id: c.assigned_bus_id || null
-      }))
-    );
-
-    // filter unassigned
-    const unassigned = students.filter(s => !s.assigned_bus_id);
-    res.json(unassigned);
-  } catch (err) {
-    console.error("getStudents error:", err);
-    res.status(500).json({ error: "Failed to fetch students" });
-  }
-};
-
-// Generate Bus ID API
-exports.generateBusId = (req, res) => {
-  try {
-    const newBusId = generateBusId();
-    res.json({ bus_id: newBusId });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to generate bus ID" });
-  }
-};
-
-// Delete Bus
-exports.deleteBus = async (req, res) => {
-  try {
-    const { bus_id } = req.params;
-    const bus = await Bus.findOneAndDelete({ bus_id });
-    if (!bus) return res.status(404).json({ error: "Bus not found" });
-
-    // If driver was assigned, unassign driver
-    if (bus.driver_id) {
-      await Driver.findByIdAndUpdate(bus.driver_id, { assigned_bus_id: null });
-    }
-
-    res.json({ message: "Bus deleted successfully" });
-  } catch (err) {
-    console.error("deleteBus error:", err);
-    res.status(500).json({ error: "Failed to delete bus" });
-  }
-};
-
-/* ---------- Unassign Driver From Bus ---------- */
-exports.unassignDriverFromBus = async (req, res) => {
-  try {
-    const { bus_id } = req.params;
-
-    // 1. Find bus by its friendly bus_id
-    const bus = await Bus.findOne({ bus_id });
-    if (!bus) return res.status(404).json({ error: "Bus not found" });
-
-    // 2. Ensure it actually has a driver assigned
-    if (!bus.driver_id) {
-      return res.status(400).json({ error: "This bus currently has no assigned driver" });
-    }
-
-    // 3. Find the driver who is assigned to this bus
-    const driver = await Driver.findById(bus.driver_id);
-    if (driver) {
-      driver.assigned_bus_id = null;
-      await driver.save();
-    }
-
-    // 4. Remove driver link from bus
-    bus.driver_id = null;
-    await bus.save();
-
-    console.log(`✅ Unassigned driver ${driver?.driver_id || ""} from bus ${bus.bus_id}`);
-
-    res.json({ message: "Driver unassigned successfully" });
-  } catch (err) {
-    console.error("❌ unassignDriverFromBus error:", err);
-    res.status(500).json({ error: err.message || "Failed to unassign driver" });
-  }
-};
-
-/* ---------- Get Unassigned Drivers ---------- */
-exports.getUnassignedDrivers = async (req, res) => {
-  try {
-    const drivers = await Driver.find({ assigned_bus_id: null })
-      .select("_id driver_id name email phone_number")
-      .lean();
-
-    res.json(drivers);
-  } catch (err) {
-    console.error("getUnassignedDrivers error:", err);
-    res.status(500).json({ error: "Failed to fetch unassigned drivers" });
-  }
-};
-
-/* ---------- Assign Driver To Bus ---------- */
-exports.assignDriverToBus = async (req, res) => {
-  try {
-    const { bus_id } = req.params;
-    const { driverId } = req.body;
-
-    // 1️ Find both documents
-    const bus = await Bus.findOne({ bus_id });
-    if (!bus) return res.status(404).json({ error: "Bus not found" });
-
-    const driver = await Driver.findById(driverId);
-    if (!driver) return res.status(404).json({ error: "Driver not found" });
-
-    // 2️ Make sure bus is empty
-    if (bus.driver_id) {
-      return res.status(400).json({ error: "This bus already has a driver" });
-    }
-
-    // 3️ Link both sides
-    bus.driver_id = driver._id;
-    driver.assigned_bus_id = bus._id;
-
-    await bus.save();
-    await driver.save();
-
-    console.log(`Assigned driver ${driver.driver_id} → bus ${bus.bus_id}`);
-    res.json({ message: "Driver assigned successfully" });
-  } catch (err) {
-    console.error("assignDriverToBus error:", err);
-    res.status(500).json({ error: "Failed to assign driver" });
-  }
-};
-
-
-
-// Get only available buses (driver assigned & not full)
-exports.getAvailableBuses = async (req, res) => {
-  try {
-    const buses = await Bus.find({ driver_id: { $ne: null } })
-      .populate("driver_id", "name email phone_number")
-      .populate({
-        path: "students",
-        select: "student_id name assigned_bus_id"
-      })
-      .lean();
-
-    // filter: has driver & not full
-    const available = buses.filter(b => {
-      const assignedCount = b.students ? b.students.length : 0;
-      return assignedCount < b.capacity;
-    });
-
-    res.json(
-      available.map(b => ({
-        _id: b._id,
-        bus_id: b.bus_id,
-        plate_number: b.plate_number,
-        capacity: b.capacity,
-        assignedCount: b.students?.length || 0,
-        driver: b.driver_id ? b.driver_id.name : "Unassigned"
-      }))
-    );
-  } catch (err) {
-    console.error("getAvailableBuses error:", err);
-    res.status(500).json({ error: "Failed to fetch available buses" });
-  }
-};
-
-
 // Display qr code cards for all students
 exports.getAllStudentsWithCards = async (req, res) => {
   try {
@@ -736,6 +477,7 @@ exports.getAllStudentsWithCards = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch all students with cards" });
   }
 };
+
 
 // ====================== View Attendance Logs with Pagination ======================
 exports.viewAttendanceLogs = async (req, res) => {

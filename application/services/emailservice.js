@@ -1,5 +1,6 @@
 //application/services/emailService.js
 const nodemailer = require("nodemailer");
+const path = require("path");
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -11,13 +12,20 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-async function sendEmail(to, subject, text) {
+async function sendEmail(to, subject, html) {
   try {
     await transporter.sendMail({
       from: `"Salamah Notifications" <${process.env.EMAIL_USER}>`,
       to,
       subject,
-      text,
+      html,  
+      attachments: [
+        {
+          filename: "salamah-logo.png",
+          path: path.join(__dirname, "../../presentation/images/salamah logo.png"),
+          cid: "salamahlogo"
+        }
+      ]
     });
     console.log(`📧 Email sent to ${to}`);
   } catch (err) {

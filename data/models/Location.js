@@ -6,7 +6,7 @@ const locationSchema = new mongoose.Schema({
   address: String,
   latitude: Number,
   longitude: Number,
-  type: String // e.g. "home", "school", "stop"
+  type: String 
 });
 
 module.exports = mongoose.model('Location', locationSchema);

@@ -18,6 +18,7 @@ function showSection(id) {
     loadStudentQrCards();
   }
 }
+
 document.querySelectorAll('.tabs .tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
@@ -61,7 +62,7 @@ updateRoleFields();
 /* ---------- Bus ID generation ---------- */
 async function generateBusId() {
   try {
-    const res = await api('/api/admin/generate-bus-id');
+    const res = await api('/api/buses/generate-bus-id');
     document.getElementById('bus_id').value = res.bus_id;
   } catch (err) {
     console.error('Failed to generate bus ID', err);
@@ -75,7 +76,7 @@ generateBusId();
 /* ---------- Load Unassigned Buses for Driver Dropdown ---------- */
 async function loadUnassignedBuses() {
   try {
-    const res = await api("/api/admin/buses/unassigned"); 
+    const res = await api("/api/buses/buses/unassigned"); 
     const select = document.getElementById("c_driver_bus");
 
 
@@ -91,8 +92,6 @@ async function loadUnassignedBuses() {
     console.error("Failed to load unassigned buses:", err);
   }
 }
-
-
 
 const plateInput = document.getElementById('plate_number');
 
@@ -126,7 +125,7 @@ document.getElementById('busForm').addEventListener('submit', async (e) => {
   }
 
   try {
-    await api('/api/admin/buses', 'POST', { bus_id, plate_number, capacity });
+    await api('/api/buses/buses', 'POST', { bus_id, plate_number, capacity });
     showSuccess('Bus added successfully');
     document.getElementById('busForm').reset();
     generateBusId();  
@@ -389,7 +388,7 @@ renderTables();
 /* ---------- Load Unassigned Drivers ---------- */
 async function loadUnassignedDrivers() {
   try {
-    const res = await api("/api/admin/drivers/unassigned");
+    const res = await api("/api/buses/drivers/unassigned");
     return res;
   } catch (err) {
     console.error("Failed to load unassigned drivers:", err);
@@ -400,7 +399,7 @@ async function loadUnassignedDrivers() {
 // ---------- Render Buses ----------
 async function renderBuses() {
   try {
-    const res = await api('/api/admin/get-buses');
+    const res = await api('/api/buses/get-buses');
     const tableBody = document.querySelector('#busTable tbody');
     tableBody.innerHTML = '';
 
@@ -451,7 +450,7 @@ renderBuses();
 async function deleteBus(bus_id) {
   showConfirm(`Delete bus ${bus_id}?`, async () => {
     try {
-      await api(`/api/admin/buses/${bus_id}`, 'DELETE');
+      await api(`/api/buses/buses/${bus_id}`, 'DELETE');
       showSuccess('Bus deleted');
       renderBuses();
     } catch (err) {
@@ -468,7 +467,7 @@ renderBuses();
 async function unassignDriver(bus_id) {
   showConfirm(`Remove driver from bus ${bus_id}?`, async () => {
     try {
-      await api(`/api/admin/buses/${bus_id}/unassign-driver`, 'PUT');
+      await api(`/api/buses/buses/${bus_id}/unassign-driver`, 'PUT');
       showSuccess('Driver unassigned successfully');
       await renderBuses();        
       await loadUnassignedBuses();
@@ -510,7 +509,7 @@ async function openAssignDriverModal(bus_id) {
           showError("Please select a driver first");
           return;
         }
-        await api(`/api/admin/buses/${bus_id}/assign-driver`, "POST", { driverId: selectedId });
+        await api(`/api/buses/buses/${bus_id}/assign-driver`, "POST", { driverId: selectedId });
         showSuccess("Driver assigned successfully");
         await renderBuses();
       }
@@ -533,7 +532,7 @@ async function assignDriverToBus(bus_id) {
   }
 
   try {
-    await api(`/api/admin/buses/${bus_id}/assign-driver`, "POST", { driverId });
+    await api(`/api/buses/buses/${bus_id}/assign-driver`, "POST", { driverId });
     showSuccess("Driver assigned successfully");
     await renderBuses();       
     await loadUnassignedBuses(); 
@@ -675,7 +674,7 @@ async function openAssignDriverModal(bus_id) {
     }
     showConfirmBoxWithSelect(bus_id, unassignedDrivers, async (driverId) => {
       try {
-        await api(`/api/admin/buses/${bus_id}/assign-driver`, 'POST', { driverId });
+        await api(`/api/buses/buses/${bus_id}/assign-driver`, 'POST', { driverId });
         showSuccess("Driver assigned successfully");
         await renderBuses();
         await loadUnassignedBuses();
@@ -717,7 +716,7 @@ const studentsData = await api("/api/admin/accounts");
 async function loadBuses() {
   try {
     
-    const buses = await api("/api/admin/available-buses");
+    const buses = await api("/api/buses/available-buses");
 
     const select = document.getElementById("bus-select");
     select.innerHTML = ""; 
@@ -770,7 +769,7 @@ async function assignStudents() {
   }
 
   try {
-    const res = await api("/api/admin/assign-students-bus", "POST", { bus_id, student_ids });
+    const res = await api("/api/buses/assign-students-bus", "POST", { bus_id, student_ids });
     showSuccess(res.message || "Assigned successfully");
 
     await loadAssignStudentsTab();
@@ -804,10 +803,22 @@ async function loadNotifications() {
   if (!adminId) return;
 
   try {
-    const res = await api(`/api/notifications/admin/${adminId}`);
+    const res = await api(`/api/notifications/admin/${me._id}`);
     const oldCount = notifications.length;
 
-    notifications = res || [];
+    //Filter out notifications that are 'read' and older than 5 days
+    const now = new Date();
+    notifications = (res || []).filter(n => {
+      const receiver = n.receivers.find(
+        r => String(r.receiver_id) === String(adminId) &&
+             r.receiver_role === "admin"
+      );
+      const isRead = receiver?.status === "read";
+      const sentAt = new Date(n.sent_at);
+      const diffDays = (now - sentAt) / (1000 * 60 * 60 * 24);
+      return !(isRead && diffDays > 5); // Remove old read ones
+    });
+
     renderNotifications();
 
     if (notifications.length > oldCount) {
@@ -822,6 +833,7 @@ async function loadNotifications() {
     showError("Failed to load admin notifications");
   }
 }
+
 
 // Render notifications in dropdown
 function renderNotifications() {
@@ -993,25 +1005,26 @@ async function loadAttendanceLogs(page = 1) {
 function renderAttendanceTable(logs) {
   const tableBody = document.querySelector("#attendanceTable tbody");
   if (!logs.length) {
-    tableBody.innerHTML = "<tr><td colspan='7' style='text-align:center;'>No attendance records found</td></tr>";
+    tableBody.innerHTML = "<tr><td colspan='6' style='text-align:center;'>No attendance records found</td></tr>";
     return;
   }
 
   tableBody.innerHTML = logs
     .map(log => `
       <tr>
-        <td>${log.attendance_id}</td>
         <td>${log.student_ref?.student_id || "—"}</td>
         <td>${log.student_ref?.name || "—"}</td>
         <td>${log.bus_ref?.bus_id || "—"}</td>
         <td>${log.bus_ref?.plate_number || "—"}</td>
         <td class="status-${log.status?.toLowerCase().replace(/\s/g, '_')}">
-        ${log.status.charAt(0).toUpperCase() + log.status.slice(1)}</td>
+          ${log.status.charAt(0).toUpperCase() + log.status.slice(1)}
+        </td>
         <td>${new Date(log.scan_time).toLocaleString()}</td>
       </tr>
     `)
     .join("");
 }
+
 
 // When the admin clicks the sidebar button → show section + load data
 document.querySelector('[onclick="showSection(\'attendanceSection\')"]').addEventListener("click", async () => {

@@ -1,4 +1,4 @@
-//application/controllers/driverController.js
+// application/controllers/driverController.js
 const bcrypt = require("bcryptjs");
 const Driver = require("../../data/models/Driver");
 const Student = require("../../data/models/Student");
@@ -13,7 +13,16 @@ exports.loginDriver = async (req, res) => {
     const match = await bcrypt.compare(password, driver.password);
     if (!match) return res.status(400).json({ error: "Invalid password" });
 
-    // Get students for this bus
+    // Create secure session
+    req.session.user = {
+      _id: driver._id,
+      role: "driver",
+      driver_id: driver.driver_id,
+      username: driver.username,
+      bus_id: driver.assigned_bus_id?._id || null,
+    };
+
+    // Load students on this driver's bus
     let students = [];
     if (driver.assigned_bus_id) {
       students = await Student.find({ assigned_bus_id: driver.assigned_bus_id._id })
@@ -21,36 +30,35 @@ exports.loginDriver = async (req, res) => {
         .lean();
     }
 
+    // Respond with minimal driver info 
     res.json({
       message: "Driver login successful",
       user: {
-        _id: driver._id,  
-        driver_id: driver.driver_id,
         username: driver.username,
         bus: driver.assigned_bus_id,
-        students
-      }
+        students,
+      },
     });
   } catch (err) {
+    console.error("Driver login error:", err);
     res.status(500).json({ error: err.message });
   }
 };
 
+// ======================================================
+
 exports.getDriverRoute = async (req, res) => {
   try {
-    const { driverId } = req.params;
+    const driverId = req.session.user.driver_id;
 
-    // Find driver by driver_id string 
     const driver = await Driver.findOne({ driver_id: driverId }).populate("assigned_bus_id");
     if (!driver) return res.status(404).json({ error: "Driver not found" });
 
-    // Find all students assigned to this bus and populate their parents
     const students = await Student.find({ assigned_bus_id: driver.assigned_bus_id._id })
       .populate("parent_id", "home_coordinates");
 
-    // Collect waypoints
     const waypoints = students
-      .map(s => s.parent_id?.home_coordinates?.coordinates)
+      .map((s) => s.parent_id?.home_coordinates?.coordinates)
       .filter(Boolean);
 
     if (waypoints.length === 0) {
@@ -63,5 +71,4 @@ exports.getDriverRoute = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
 

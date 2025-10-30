@@ -30,13 +30,13 @@ exports.logScan = async (req, res) => {
     // Fetch the most recent scan for this student today
     const lastScan = await Attendance.findOne({
       student_id: studentId,
-      scan_time: { $gte: startOfDay, $lte: endOfDay }, // Prevent duplicate scans within 10 second
+      scan_time: { $gte: startOfDay, $lte: endOfDay }, 
     }).sort({ scan_time: -1 });
     
-     // Prevent duplicate scans within 10 second
-    if (lastScan && Date.now() - new Date(lastScan.scan_time).getTime() < 10000) {
+     // Prevent duplicate scans within 5 minutes (same student)
+    if (lastScan && Date.now() - new Date(lastScan.scan_time).getTime() < 5 * 60 * 1000) {
       return res.json({
-        message: `Duplicate scan ignored (last: ${lastScan.status})`,
+        message: `Duplicate scan ignored — please wait at least 5 minutes before re-scanning.`,
         status: lastScan.status
       });
     }

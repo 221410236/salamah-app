@@ -7,7 +7,6 @@ async function apiFetch(url, method = 'GET', body, opts = {}) {
     ...opts.headers
   };
 
-  // attach token if present
   const session = JSON.parse(sessionStorage.getItem('session') || 'null');
   if (session && session.token) headers['Authorization'] = `Bearer ${session.token}`;
 
@@ -15,6 +14,7 @@ async function apiFetch(url, method = 'GET', body, opts = {}) {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
+    credentials: 'include', // ✅ This line is the key!
     ...opts
   });
 

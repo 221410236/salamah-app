@@ -52,6 +52,17 @@
       font-size: 20px;
       cursor: pointer;
     }
+    #emergencyModal label {
+      display: block;
+      text-align: left;
+      font-weight: bold;
+      } 
+
+    #emergencyModal select,
+    #emergencyModal textarea {
+      width: 100%;
+      margin-top: 4px;
+    }
   </style>
 </head>
 
@@ -107,22 +118,25 @@
 
   <!-- 🚨 Emergency Modal -->
   <div id="emergencyModal" class="modal hidden">
-    <div class="modal-content">
-      <span class="close" id="closeEmergency">&times;</span>
-      <h3>🚨 Report Emergency</h3>
-      <label>Emergency Type</label>
-      <select id="emergencyType" required>
-        <option value="">-- Select --</option>
-        <option value="accident">Accident</option>
-        <option value="breakdown">Breakdown</option>
-        <option value="delay">Delay</option>
-      </select>
+  <div class="modal-content">
+    <span class="close" id="closeEmergency">&times;</span>
+    <h3>🚨 Report Emergency</h3>
 
-      <label>Details</label>
-      <textarea id="emergencyMessage" placeholder="Write short details..." rows="3"></textarea>
+    <label style="margin-top:10px;">Emergency Type</label>
+    <select id="emergencyType" required>
+      <option value="" disabled selected>-- Select --</option>
+      <option value="accident">Accident</option>
+      <option value="breakdown">Breakdown</option>
+      <option value="delay">Delay</option>
+    </select>
 
-      <button id="submitEmergency" class="btn btn-danger">Send Notification</button>
-    </div>
+    <label style="margin-top:12px;">Please describe the situation briefly (10–200 characters)</label>
+    <textarea id="emergencyMessage" rows="4" maxlength="200" style="resize:none;"></textarea>
+
+    <button id="submitEmergency" class="btn btn-danger" style="margin-top:12px;">
+      Send Notification
+    </button>
+  </div>
   </div>
 
   <div id="alertBox" class="alert-box hidden">

@@ -1,8 +1,10 @@
-// 🧠 Express route for handling scans
+// Express route for handling scans
 const express = require("express");
 const router = express.Router();
 const scanController = require("../controllers/scanController");
+const { requireLogin, requireRole } = require("../middleware/authMiddleware");
 
-router.post("/scan", scanController.logScan);
+// Requires driver authentication
+router.post("/scan", requireLogin, requireRole("driver"), scanController.logScan);
 
 module.exports = router;

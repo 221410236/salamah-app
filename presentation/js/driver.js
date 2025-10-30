@@ -172,31 +172,41 @@ document.getElementById("submitEmergency").addEventListener("click", async () =>
   const type = document.getElementById("emergencyType").value;
   const message = document.getElementById("emergencyMessage").value.trim();
 
-  if (!type) return showError("Please select emergency type");
+  if (!type || type === "-- Select --") return showError("Please select a valid emergency type");
 
-  try {
-    const res = await fetch("/api/notifications/emergency", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type,
-        message: message || type,
-        bus_id: me?.bus?._id || "unknown"
-      }),
-    });
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
 
-    const text = await res.text();
-    if (res.ok) {
-      showSuccess(text || "Emergency notification sent successfully");
-      emergencyModal.classList.add("hidden");
-      document.getElementById("emergencyType").value = "";
-      document.getElementById("emergencyMessage").value = "";
-    } else showError(text || "Failed to send notification");
+    try {
+      const res = await fetch("/api/notifications/emergency", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type,
+          message: message,
+          bus_id: me?.bus?._id || "unknown",
+          location: { lat, lng } 
+        }),
+      });
 
-  } catch (err) {
-    console.error(err);
-    showError("Failed to send notification");
-  }
+      const text = await res.text();
+      if (res.ok) {
+        showSuccess(text || "Emergency notification sent successfully");
+        emergencyModal.classList.add("hidden");
+        document.getElementById("emergencyType").value = "";
+        document.getElementById("emergencyMessage").value = "";
+      } else {
+        showError(text || "Failed to send notification");
+      }
+
+    } catch (err) {
+      console.error(err);
+      showError("Failed to send notification");
+    }
+  }, () => {
+    showError("Location access denied. Please enable GPS.");
+  });
 });
 
 // -------------------- QR CODE SCANNER --------------------
@@ -237,10 +247,10 @@ document.addEventListener("DOMContentLoaded", () => {
 let lastScanId = null;
 
 function onScanSuccess(decodedText) {
-  // prevent re-scanning same code within 0.8s
+  // prevent re-scanning same code within 2 minutes
   if (decodedText === lastScanId) return;
   lastScanId = decodedText;
-  setTimeout(() => (lastScanId = null), 800);
+  setTimeout(() => (lastScanId = null), 2 * 60 * 1000);
 
   if (html5QrCode?.isScanning) {
     try { html5QrCode.pause(true); } catch (_) {}
@@ -255,7 +265,10 @@ function onScanSuccess(decodedText) {
   resultEl.textContent = `Scanned student ID: ${studentId}`;
   sendScan(studentId);
 
-  try { html5QrCode.resume(); } catch (_) {}
+  // Resume scanning after a short delay
+  setTimeout(() => {
+    try { html5QrCode.resume(); } catch (_) {}
+    }, 2000);
 }
 
 

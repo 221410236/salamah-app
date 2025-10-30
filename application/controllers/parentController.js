@@ -1,5 +1,6 @@
-//application/controllers/parentController.js
-const path = require("path"); 
+// application/controllers/parentController.js
+const path = require("path");
+const fs = require("fs");
 const bcrypt = require("bcryptjs");
 const Parent = require("../../data/models/Parent");
 const Student = require("../../data/models/Student");
@@ -8,7 +9,7 @@ exports.loginParent = async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    // ✅ Populate children, their bus, and driver info
+    // Populate children, their bus, and driver info
     const parent = await Parent.findOne({ username })
       .populate({
         path: "children",
@@ -27,15 +28,24 @@ exports.loginParent = async (req, res) => {
     const match = await bcrypt.compare(password, parent.password);
     if (!match) return res.status(400).json({ error: "Invalid password" });
 
-    // ✅ Return all needed info safely to frontend
+    // Store full session info for middleware
+    req.session.user = {
+      _id: parent._id,
+      role: "parent",
+      parent_id: parent.parent_id,
+      username: parent.username,
+    };
+
+    // Return all needed identifiers to frontend
     res.json({
       message: "Parent login successful",
       user: {
-        _id: parent._id,
-        parent_id: parent.parent_id,
+        _id: parent._id,        
+        role: "parent",          
         username: parent.username,
+        parent_id: parent.parent_id,
+        name: parent.name,
         children: parent.children.map((child) => ({
-          _id: child._id,
           name: child.name,
           student_id: child.student_id,
           card_url: child.card_url,
@@ -61,19 +71,21 @@ exports.loginParent = async (req, res) => {
   }
 };
 
-
 exports.getQrCards = async (req, res) => {
   try {
-    const parentId = req.params.id;
+    const parentId = req.session.user._id;
 
     const students = await Student.find({ parent_id: parentId })
       .select("student_id name card_url");
 
-    const cards = students.map(s => {
+    const cards = students.map((s) => {
       let url = s.card_url;
-      const localPath = path.join(__dirname, "../../uploads/cards", `${s.student_id}.png`);
+      const localPath = path.join(
+        __dirname,
+        "../../uploads/cards",
+        `${s.student_id}.png`
+      );
 
-      // If the DB doesn’t have the card_url but the file exists, auto-link it
       if (!url && fs.existsSync(localPath)) {
         url = `/uploads/cards/${s.student_id}.png`;
       }

@@ -84,13 +84,24 @@ async function loadNotifications() {
   if (!parentId) return;
 
   try {
-    const res = await apiFetch(`/api/notifications/parent/${parentId}`);
+    const res = await apiFetch(`/api/notifications/parent/${me._id}`);
     const oldCount = notifications.length;
 
-    notifications = res || [];
+    // 🧹 Remove 'read' notifications older than 5 days
+    const now = new Date();
+    notifications = (res || []).filter(n => {
+      const receiver = n.receivers.find(
+        r => String(r.receiver_id) === String(parentId) &&
+             r.receiver_role === "parent"
+      );
+      const isRead = receiver?.status === "read";
+      const sentAt = new Date(n.sent_at);
+      const diffDays = (now - sentAt) / (1000 * 60 * 60 * 24);
+      return !(isRead && diffDays > 5); // remove if read and older than 5 days
+    });
+
     renderNotifications();
 
-    
     if (notifications.length > oldCount) {
       const latest = notifications[0];
       if (latest?.notification?.message) {
@@ -102,8 +113,8 @@ async function loadNotifications() {
   } catch (err) {
     showError("Failed to load parent notifications");
   }
-  
 }
+
 
 // Render notifications in dropdown
 function renderNotifications() {
