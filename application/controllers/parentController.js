@@ -50,18 +50,19 @@ exports.loginParent = async (req, res) => {
           student_id: child.student_id,
           card_url: child.card_url,
           assigned_bus_id: child.assigned_bus_id
-            ? {
-                plate_number: child.assigned_bus_id.plate_number || null,
-                bus_id: child.assigned_bus_id.bus_id || null,
-                driver_id: child.assigned_bus_id.driver_id
-                  ? {
-                      username: child.assigned_bus_id.driver_id.username || null,
-                      phone_number:
-                        child.assigned_bus_id.driver_id.phone_number || "-",
-                    }
-                  : null,
+             ? {
+              _id: child.assigned_bus_id._id, 
+              plate_number: child.assigned_bus_id.plate_number || null,
+              bus_id: child.assigned_bus_id.bus_id || null,
+              driver_id: child.assigned_bus_id.driver_id
+              ? {
+                username: child.assigned_bus_id.driver_id.username || null,
+                phone_number:
+                child.assigned_bus_id.driver_id.phone_number || "-",
               }
-            : null,
+        : null,
+    }
+  : null,
         })),
       },
     });
@@ -85,7 +86,7 @@ exports.getQrCards = async (req, res) => {
         "../../uploads/cards",
         `${s.student_id}.png`
       );
-
+      // If the DB doesn’t have the card_url but the file exists, auto-link it
       if (!url && fs.existsSync(localPath)) {
         url = `/uploads/cards/${s.student_id}.png`;
       }

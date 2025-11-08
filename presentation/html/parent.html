@@ -188,6 +188,8 @@
       <button class="btn sidebar-btn" onclick="showSection('detailsSection')">Child & Bus Details</button>
       <button class="btn sidebar-btn" onclick="showSection('qrSection')">My Child’s QR Cards</button>
       <button class="btn sidebar-btn" onclick="showSection('mapSection')">Live Map</button>
+      <button class="btn sidebar-btn" onclick="showSection('absenceSection')">Report Student Absence</button>
+
     </div>
 
     <!-- Right Main Panel -->
@@ -210,25 +212,23 @@
         <h2>Live Map</h2>
         <div id="map"></div>
       </section>
-    </div>
-  </main>
+
+      <!-- Report Absence Section -->
+     <section id="absenceSection" class="section hidden">
+        <h2>Report Student Absence</h2>
+        <p class="muted">Select a child and mark them as absent for today.</p>
+
+        <div id="absenceList" class="student-list" style="margin-top:12px;"> </div>
+     </section>
+     </div>
+ </main>
+
 
   <!-- Scripts -->
   <script src="/js/app.js"></script>
   <script src="/js/parent.js"></script>
 
-  <script>
-    function showSection(sectionId) {
-      document.querySelectorAll(".section").forEach(s => s.classList.add("hidden"));
-      document.getElementById(sectionId).classList.remove("hidden");
-
-      if (sectionId === "qrSection") loadParentQrCards();
-    }
-
-    // Show Live Map by default
-    showSection('mapSection');
-  </script>
-
+ 
   <div id="toastContainer"></div>
   <div id="alertBox" class="alert-box hidden">
     <div class="alert-content">

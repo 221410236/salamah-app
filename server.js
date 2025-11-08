@@ -17,6 +17,9 @@ const io = new Server(server, {
   },
 });
 
+// Make io accessible to controllers
+app.set("io", io);
+
 // ========== Middleware ==========
 app.use(express.json());
 app.use(
@@ -73,6 +76,7 @@ const driverRoutes = require("./application/routes/driverRoutes");
 const notificationRoutes = require("./application/routes/notificationRoutes");
 const scanRoutes = require("./application/routes/scanRoutes");
 const busRoutes = require("./application/routes/busRoutes");
+const absenceRoutes = require("./application/routes/absenceRoutes");
 
 // ========== Use Routes ==========
 app.use("/api/admin", adminRoutes);
@@ -81,6 +85,7 @@ app.use("/api/parents", parentRoutes);
 app.use("/api/drivers", driverRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api", scanRoutes);
+app.use("/api/absence", absenceRoutes);
 
 const { me, logout } = require("./application/middleware/authMiddleware");
 app.get("/api/auth/me", me);
@@ -104,7 +109,7 @@ io.on("connection", (socket) => {
   socket.on("location", (data) => socket.broadcast.emit("location", data));
 
   socket.on("disconnect", () => {
-    console.log("❌ Socket disconnected:", socket.id);
+    console.log("Socket disconnected:", socket.id);
   });
 });
 

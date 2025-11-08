@@ -2,6 +2,7 @@
 const bcrypt = require("bcryptjs");
 const Driver = require("../../data/models/Driver");
 const Student = require("../../data/models/Student");
+const { isAbsent } = require("../services/absenceStore");
 
 exports.loginDriver = async (req, res) => {
   try {
@@ -29,46 +30,60 @@ exports.loginDriver = async (req, res) => {
         .populate("assigned_bus_id")
         .lean();
     }
-
-    // Respond with minimal driver info 
+ 
     res.json({
       message: "Driver login successful",
       user: {
+        _id: driver._id,
+        driver_id: driver.driver_id,
         username: driver.username,
         bus: driver.assigned_bus_id,
         students,
       },
     });
   } catch (err) {
-    console.error("Driver login error:", err);
-    res.status(500).json({ error: err.message });
+    console.error("❌ loginDriver error:", err);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
-// ======================================================
+// Driver Route (excludes absent students)
 
 exports.getDriverRoute = async (req, res) => {
   try {
-    const driverId = req.session.user.driver_id;
+    const { driverId } = req.params;
 
     const driver = await Driver.findOne({ driver_id: driverId }).populate("assigned_bus_id");
     if (!driver) return res.status(404).json({ error: "Driver not found" });
 
-    const students = await Student.find({ assigned_bus_id: driver.assigned_bus_id._id })
-      .populate("parent_id", "home_coordinates");
+    const students = await Student.find({
+      assigned_bus_id: driver.assigned_bus_id._id,
+    }).populate("parent_id", "home_coordinates");
 
+    // Exclude students who are absent today
     const waypoints = students
-      .map((s) => s.parent_id?.home_coordinates?.coordinates)
-      .filter(Boolean);
+      .filter(
+        (s) =>
+          s.parent_id?.home_coordinates?.coordinates &&
+          !isAbsent(s.student_id)
+      )
+      .map((s) => ({
+        lng: s.parent_id.home_coordinates.coordinates[0],
+        lat: s.parent_id.home_coordinates.coordinates[1],
+        student_id: s.student_id,
+        name: s.name,
+      }));
 
-    if (waypoints.length === 0) {
-      return res.status(404).json({ error: "No student home locations found." });
-    }
+    if (waypoints.length === 0)
+      return res.status(404).json({
+        error: "No student home locations found or all absent today.",
+      });
 
+    console.log(`Driver ${driverId} route loaded — ${waypoints.length} active stops`);
     res.json({ waypoints });
   } catch (err) {
     console.error("getDriverRoute error:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 

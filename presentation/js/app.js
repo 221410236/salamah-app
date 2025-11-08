@@ -14,9 +14,17 @@ async function apiFetch(url, method = 'GET', body, opts = {}) {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
-    credentials: 'include', // ✅ This line is the key!
+    credentials: 'include', // This line is the key
     ...opts
   });
+
+  // Handle session expiration automatically
+  if (res.status === 401 || res.status === 403) {
+    sessionStorage.removeItem('session');
+    alert('⚠️ Your session expired. Please log in again.');
+    location.href = '/html/login.html';
+    return;
+  }
 
   if (!res.ok) {
     const text = await res.text();
