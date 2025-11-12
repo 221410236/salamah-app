@@ -190,6 +190,30 @@ async function loadParentQrCards() {
   }
 }
 
+/* Download + Print Functions */
+function downloadQrCard(url, name) {
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${name}_QRCard.png`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+window.downloadQrCard = downloadQrCard; 
+
+function printQrCard(url, name) {
+  const printWindow = window.open("", "_blank");
+  printWindow.document.write(`
+    <html><head><title>${name} QR Card</title></head>
+    <body style="text-align:center;">
+      <img src="${url}" style="width:400px;" />
+      <script>window.onload=()=>{window.print();window.close();}</script>
+    </body></html>
+  `);
+  printWindow.document.close();
+}
+window.printQrCard = printQrCard; 
+
 // ABSENCE REPORT (SPRINT 4)
 
 async function loadAbsenceList() {

@@ -1,6 +1,6 @@
 /* Salamah Sprint 1 – styles (light + fixed small header) */
 :root{
-  --bg:#ffffff; --card:#f9f9f9; --muted:#666666; --brand:#f1b51c; --text:#000000; --danger:#e5484d;
+  --bg:#fff9eb; --card:#fff; --muted:#666666; --brand:#f1b51c; --text:#000000; --danger:#e5484d;
   --border:#dddddd;
 }
 *{box-sizing:border-box}

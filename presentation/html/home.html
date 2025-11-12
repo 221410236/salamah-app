@@ -2,51 +2,97 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Salamah - Home</title>
-  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/styles.css" />
 
   <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      background: linear-gradient(135deg, #fffdf7, #fff8e6);
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     .home-card {
-      padding: 24px;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+      padding: 50px 40px;
       text-align: center;
-      border: 2px solid var(--brand);
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-      border-radius: 12px;
+      width: 90%;
+      max-width: 460px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .home-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 36px rgba(0, 0, 0, 0.1);
     }
 
     .home-logo {
-      width: 160px;
-      max-width: 80%;
+      width: 180px;
       margin-bottom: 20px;
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.1));
     }
 
     .home-text {
+      color: #444;
       font-size: 16px;
-      line-height: 1.5;
-      margin-bottom: 24px;
+      line-height: 1.6;
+      margin-bottom: 30px;
     }
 
     .btn-login {
+      background: #fccb2d;
+      border: none;
+      color: #222;
+      font-weight: 600;
       font-size: 16px;
-      padding: 12px 20px;
-      display: inline-block;
-      width: 60%;
-      max-width: 220px;
+      padding: 12px 40px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      box-shadow: 0 3px 8px rgba(252, 203, 45, 0.4);
+    }
+
+    .btn-login:hover {
+      background: #f1c132;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px rgba(252, 203, 45, 0.45);
+    }
+
+    .footer-note {
+      margin-top: 22px;
+      font-size: 13px;
+      color: #777;
+    }
+
+    .footer-note span {
+      color: #f1c132;
+      font-weight: 600;
     }
   </style>
 </head>
+
 <body>
-  <div class="centered">
-    <div class="card home-card w-420">
-      <img src="/images/salamah logo.png" alt="Salamah Logo" class="home-logo">
-      <p class="home-text muted">
-        Track buses in real time, receive instant alerts, and stay connected.<br>
-        Salamah makes school transportation safer, transparent, and more reliable.
-      </p>
-      <a href="/html/login.html"><button class="btn btn-login">Log In</button></a>
-    </div>
+  <div class="home-card">
+    <img src="/images/salamah logo.png" alt="Salamah Logo" class="home-logo" />
+    <p class="home-text">
+      Track buses in real time, receive instant alerts, and stay connected.<br />
+      Salamah makes school transportation safer, transparent, and more reliable.
+    </p>
+    <a href="/html/login.html">
+      <button class="btn-login">Log In</button>
+    </a>
+    <p class="footer-note">
+      Powered by <span>Salamah</span> — Track Their Journey
+    </p>
   </div>
 </body>
 </html>
+

@@ -174,15 +174,22 @@ exports.generateBusId = async (req, res) => {
 exports.deleteBus = async (req, res) => {
   try {
     const { bus_id } = req.params;
-    const bus = await Bus.findOneAndDelete({ bus_id });
+
+    const bus = await Bus.findOne({ bus_id });
     if (!bus) return res.status(404).json({ error: "Bus not found" });
 
-    // If driver was assigned, unassign driver
     if (bus.driver_id) {
       await Driver.findByIdAndUpdate(bus.driver_id, { assigned_bus_id: null });
     }
+    await Student.updateMany(
+      { assigned_bus_id: bus._id },
+      { $set: { assigned_bus_id: null } }
+    );
+    await Bus.deleteOne({ _id: bus._id });
 
-    res.json({ message: "Bus deleted successfully" });
+    res.json({
+      message: "Bus deleted successfully — driver and students unassigned"
+    });
   } catch (err) {
     console.error("deleteBus error:", err);
     res.status(500).json({ error: "Failed to delete bus" });
@@ -243,19 +250,19 @@ exports.assignDriverToBus = async (req, res) => {
     const { bus_id } = req.params;
     const { driverId } = req.body;
 
-    // 1️ Find both documents
+    // Find both documents
     const bus = await Bus.findOne({ bus_id });
     if (!bus) return res.status(404).json({ error: "Bus not found" });
 
     const driver = await Driver.findById(driverId);
     if (!driver) return res.status(404).json({ error: "Driver not found" });
 
-    // 2️ Make sure bus is empty
+    // Make sure bus is empty
     if (bus.driver_id) {
       return res.status(400).json({ error: "This bus already has a driver" });
     }
 
-    // 3️ Link both sides
+    // Link both sides
     bus.driver_id = driver._id;
     driver.assigned_bus_id = bus._id;
 
