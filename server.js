@@ -6,14 +6,19 @@ const path = require("path");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
+const isProd = process.env.NODE_ENV === "production";
+
 const app = express();
 const server = http.createServer(app);
 
 // ========== Socket.IO Setup ==========
 const io = new Server(server, {
   cors: {
-    origin: "*", // Allow all origins for now (will restrict later)
+    origin: isProd
+      ? "https://YOUR-RENDER-URL.onrender.com"
+      : "http://localhost:5000",
     methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
   },
 });
 
@@ -22,21 +27,22 @@ app.set("io", io);
 
 // ========== Middleware ==========
 app.use(express.json());
+
 app.use(
   cors({
-    origin: "http://localhost:5000", // your frontend origin
-    credentials: true,                // allow cookies
-    methods: ["GET", "POST", "PUT", "DELETE"]
+    origin: isProd
+      ? "https://YOUR-RENDER-URL.onrender.com"
+      : "http://localhost:5000",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
   })
 );
 
-// SECURE SESSIONS
+// ========== Secure Sessions ==========
 const session = require("express-session");
 const MongoStore = require("connect-mongo");
 
 app.set("trust proxy", 1);
-
-const isProd = process.env.NODE_ENV === "production";
 
 app.use(
   session({
@@ -45,20 +51,18 @@ app.use(
     saveUninitialized: false,
     store: MongoStore.create({
       mongoUrl: process.env.MONGO_URI,
-      ttl: 60 * 60 * 24, // 1 day
+      ttl: 60 * 60 * 24,
     }),
     cookie: {
       httpOnly: true,
-      secure: isProd,                 
+      secure: isProd, // TRUE in production (HTTPS)
       sameSite: isProd ? "none" : "lax",
-      maxAge: 1000 * 60 * 60,  // 1 hour
+      maxAge: 1000 * 60 * 60,
     },
   })
 );
 
-
-
-// ========== Static Files (Presentation Layer) ==========
+// ========== Static Files ==========
 app.use(express.static(path.join(__dirname, "presentation")));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -100,17 +104,13 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "presentation/html/home.html"));
 });
 
-// Optional redirects
-app.get("/login", (req, res) => res.redirect("/html/login.html"));
-app.get("/admin", (req, res) => res.redirect("/html/admin.html"));
-app.get("/parent", (req, res) => res.redirect("/html/parent.html"));
-app.get("/driver", (req, res) => res.redirect("/html/driver.html"));
-
 // ========== Socket.IO ==========
 io.on("connection", (socket) => {
   console.log("🔌 Socket connected:", socket.id);
 
-  socket.on("location", (data) => socket.broadcast.emit("location", data));
+  socket.on("location", (data) => {
+    socket.broadcast.emit("location", data);
+  });
 
   socket.on("disconnect", () => {
     console.log("Socket disconnected:", socket.id);
