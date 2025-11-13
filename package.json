@@ -13,6 +13,7 @@
     "bytes": "^3.1.2",
     "call-bind-apply-helpers": "^1.0.2",
     "call-bound": "^1.0.4",
+    "cloudinary": "^2.8.0",
     "connect-mongo": "^5.1.0",
     "content-disposition": "^0.5.4",
     "content-type": "^1.0.5",
