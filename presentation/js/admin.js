@@ -892,9 +892,9 @@ document.addEventListener("click", (e) => {
 
 
 });
-/* ==============================================================
-  FETCH AND DISPLAY STUDENT QR CARDS
-============================================================== */
+
+// FETCH AND DISPLAY STUDENT QR CARDS
+
 async function loadStudentQrCards() {
   try {
     const res = await fetch("/api/admin/get-all-students");
@@ -934,9 +934,8 @@ async function loadStudentQrCards() {
   }
 }
 
-/* ==============================================================
-   🧾 DOWNLOAD + PRINT FUNCTIONS
-============================================================== */
+// DOWNLOAD + PRINT FUNCTIONS
+
 function downloadQrCard(url, name) {
   const link = document.createElement("a");
   link.href = url;
@@ -958,7 +957,7 @@ function printQrCard(url, name) {
   printWindow.document.close();
 }
 
-/* ---------- BUS ATTENDANCE LOGS ---------- */
+// BUS ATTENDANCE LOGS
 let currentPage = 1;
 const limit = 20; // 20 records per page
 

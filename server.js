@@ -36,9 +36,11 @@ const MongoStore = require("connect-mongo");
 
 app.set("trust proxy", 1);
 
+const isProd = process.env.NODE_ENV === "production";
+
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "salamah-secret-key",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
@@ -46,13 +48,15 @@ app.use(
       ttl: 60 * 60 * 24, // 1 day
     }),
     cookie: {
-      httpOnly: true, // Prevent JS access
-      secure: false,  // Change to true when using HTTPS
-      sameSite: "lax",
-      maxAge: 60 * 60 * 1000, // 1 hour
+      httpOnly: true,
+      secure: isProd,                 
+      sameSite: isProd ? "none" : "lax",
+      maxAge: 1000 * 60 * 60,  // 1 hour
     },
   })
 );
+
+
 
 // ========== Static Files (Presentation Layer) ==========
 app.use(express.static(path.join(__dirname, "presentation")));
