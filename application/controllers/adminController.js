@@ -221,11 +221,11 @@ exports.createParent = async (req, res) => {
     const parent = new Parent(parentData);
     await parent.save();
 
-    // ✅ Generate QR cards for children if provided
+    // Generate QR cards for children if provided
     if (Array.isArray(children) && children.length > 0) {
       const savedChildren = await Promise.all(children.map(async (child) => {
         const student = new Student({
-          student_id: generateStudentId(),
+          student_id: await generateStudentId(),
           name: child.name,
           parent_id: parent._id,
           assigned_bus_id: child.assigned_bus_id || null
