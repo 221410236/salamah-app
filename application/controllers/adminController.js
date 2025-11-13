@@ -459,19 +459,7 @@ exports.getAllStudentsWithCards = async (req, res) => {
       .select("student_id name assigned_bus_id card_url")
       .lean();
 
-    // Ensure URLs are accessible (start with /uploads)
-    const formatted = students.map(s => ({
-      student_id: s.student_id,
-      name: s.name,
-      assigned_bus_id: s.assigned_bus_id,
-      card_url: s.card_url?.startsWith("/")
-        ? s.card_url
-        : s.card_url
-        ? `/${s.card_url}`
-        : null,
-    }));
-
-    res.json(formatted);
+    res.json(students);
   } catch (err) {
     console.error("getAllStudentsWithCards error:", err);
     res.status(500).json({ error: "Failed to fetch all students with cards" });
