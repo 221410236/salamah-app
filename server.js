@@ -15,7 +15,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: isProd
-      ? "https://YOUR-RENDER-URL.onrender.com"
+      ? "https://salamah-rc3h.onrender.com"
       : "http://localhost:5000",
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
@@ -31,7 +31,7 @@ app.use(express.json());
 app.use(
   cors({
     origin: isProd
-      ? "https://YOUR-RENDER-URL.onrender.com"
+      ? "https://salamah-rc3h.onrender.com"
       : "http://localhost:5000",
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
