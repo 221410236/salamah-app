@@ -4,9 +4,14 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Environment files (contains credentials) + seed
+# Environment files (credentials)
 .env
+.env.local
+.env.production
+
+# MongoDB seed scripts or private setup files
 seed.js
+scripts/seed.js
 
 # Uploads (QR cards, images, etc.)
 uploads/
@@ -26,5 +31,6 @@ Thumbs.db
 *.tmp
 *.bak
 
-#lock file 
+# Lock files (safe to ignore for Render auto-installs)
 package-lock.json
+yarn.lock
