@@ -175,6 +175,49 @@
         grid-template-columns: 1fr;
       }
     }
+    /* Mobile Responsive */
+      @media (max-width: 900px) {
+  .split {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  #map {
+    height: 350px;
+    margin-top: 14px;
+  }
+
+  .panel {
+    order: 2;
+  }
+
+  .card {
+    padding: 12px !important;
+  }
+
+  .tabs button {
+    width: 100%;
+    margin-bottom: 6px;
+  }
+
+  table {
+    font-size: 13px;
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .assign-container {
+    padding: 12px;
+  }
+
+  .dropdown,
+  .search-bar,
+  .btn {
+    width: 100%;
+  }
+    }
+
   </style>
 </head>
 <body>

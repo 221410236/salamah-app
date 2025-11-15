@@ -6,17 +6,17 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Salamah - Driver</title>
 
-  <!-- 🌍 Mapbox -->
+  <!-- Mapbox -->
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
   <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.0/mapbox-gl-directions.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
   <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.0/mapbox-gl-directions.js"></script>
 
-  <!-- ⚙️ App Scripts -->
+  <!-- App Scripts -->
   <script src="/js/messages.js"></script>
   <script src="/socket.io/socket.io.js"></script>
 
-  <!-- 🎨 Styles -->
+  <!-- Styles -->
   <link rel="stylesheet" href="/css/styles.css">
 
   <style>
@@ -30,7 +30,7 @@
     .panel { display: flex; flex-direction: column; gap: 10px; }
     .students-list { overflow: auto; }
 
-    /* 🧱 Modal Styles */
+    /* Modal Styles */
     .modal {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.6);
@@ -63,6 +63,36 @@
       width: 100%;
       margin-top: 4px;
     }
+    /* Mobile Responsive*/
+      @media (max-width: 900px) {
+  .split {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  #map {
+    height: 350px;
+    margin-top: 14px;
+  }
+
+  .panel {
+    order: 2;
+  }
+
+  .card {
+    padding: 12px !important;
+  }
+
+  .students-list {
+    max-height: 200px;
+  }
+
+  .btn {
+    width: 100%;
+    font-size: 16px;
+    padding: 10px;
+  }
+      }
   </style>
 </head>
 
@@ -94,7 +124,7 @@
         <h3>QR Code Scanner</h3>
        <button id="openScanner" class="btn"> Scan QR Code</button>
 
-        <!-- 🚨 Emergency Section -->
+        <!-- Emergency Section -->
         <h3>Emergency</h3>
         <p>If there is an emergency (accident, breakdown, delay), report it here.</p>
         <button id="sendEmergencyBtn" class="btn btn-danger">🚨 Send Emergency Notification</button>
@@ -106,7 +136,7 @@
     </section>
   </main>
 
-  <!-- 📷 QR Scanner Modal -->
+  <!-- QR Scanner Modal -->
   <div id="qrScannerModal" class="modal hidden">
     <div class="modal-content">
       <span class="close" id="closeQRScanner">&times;</span>
@@ -116,7 +146,7 @@
     </div>
   </div>
 
-  <!-- 🚨 Emergency Modal -->
+  <!-- Emergency Modal -->
   <div id="emergencyModal" class="modal hidden">
   <div class="modal-content">
     <span class="close" id="closeEmergency">&times;</span>
@@ -146,7 +176,7 @@
     </div>
   </div>
 
-  <!-- 🧠 Scripts (correct order) -->
+  <!-- Scripts -->
   <script src="https://unpkg.com/html5-qrcode"></script>
   <script src="/js/app.js"></script>
   <script src="/js/messages.js"></script>
