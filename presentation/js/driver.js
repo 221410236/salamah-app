@@ -299,7 +299,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   //QR SCANNER
   let html5QrCode = null;
-async function sendScan(studentId) {
+  async function sendScan(studentId) {
   try {
     const response = await fetch("/api/scan", {
       method: "POST",
@@ -325,7 +325,7 @@ async function sendScan(studentId) {
     resultEl.textContent = "Error sending scan.";
     showError("Error sending scan");
   }
-}
+  }
 
   let lastScanId = null;
   function onScanSuccess(decodedText) {
