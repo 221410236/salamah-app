@@ -1,4 +1,4 @@
-// presentation/js/parent.js (FINAL UPDATED VERSION)
+// presentation/js/parent.js 
 
 const session = Auth.requireRole('parent');
 const stored = JSON.parse(sessionStorage.getItem('session') || 'null');
@@ -38,26 +38,46 @@ const map = new mapboxgl.Map({
 });
 map.addControl(new mapboxgl.NavigationControl());
 
-let busMarker = null;
+// Multi-Bus Live Tracking
+
+// 1) Collect all bus_ids assigned to this parent's children
+const parentBusIds = (me.children || [])
+  .map(c => c.assigned_bus_id?.bus_id)
+  .filter(Boolean);
+
+// 2) Marker dictionary
+const busMarkers = {};
 const socket = io();
 
-// Live bus tracking
-socket.on('location', (data) => {
-  const { lat, lng } = data;
-  if (!busMarker) {
-    const el = document.createElement('div');
+// 3) Listen to bus updates 
+socket.on("busLocationUpdate", (data) => {
+  const { bus_id, lat, lng } = data;
+  if (!bus_id || lat == null || lng == null) return;
+
+
+  // Only show buses assigned to this parent's children
+  if (!parentBusIds.includes(bus_id)) return;
+
+  // Create marker if it does not exist
+  if (!busMarkers[bus_id]) {
+    const el = document.createElement("div");
     el.style.backgroundImage = 'url("/images/bus.png")';
-    el.style.backgroundSize = 'cover';
-    el.style.width = '40px';
-    el.style.height = '40px';
-    el.style.borderRadius = '50%';
-    el.style.cursor = 'pointer';
-    busMarker = new mapboxgl.Marker(el).setLngLat([lng, lat]).addTo(map);
-  } else {
-    busMarker.setLngLat([lng, lat]);
+    el.style.backgroundSize = "cover";
+    el.style.width = "40px";
+    el.style.height = "40px";
+
+    busMarkers[bus_id] = new mapboxgl.Marker(el)
+      .setLngLat([lng, lat])
+      .addTo(map);
   }
+
+  // Update marker location
+  busMarkers[bus_id].setLngLat([lng, lat]);
+
+  // fly to location
   map.flyTo({ center: [lng, lat], zoom: 14 });
 });
+
 
 // PARENT NOTIFICATIONS
 const notifBell = document.getElementById("notifBell");
@@ -324,4 +344,3 @@ document.addEventListener("DOMContentLoaded", () => {
 showSection('mapSection');
 
 loadParentQrCards()
-
