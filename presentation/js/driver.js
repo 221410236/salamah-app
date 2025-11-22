@@ -310,13 +310,16 @@ async function sendScan(studentId) {
     const data = await response.json();
 
     if (!response.ok) {
-      showError(data.message || "Scan failed");
-    } else {
-      showSuccess(data.message || "Scan recorded successfully!");
+      const msg = data.message || "Scan failed";
+      resultEl.textContent = msg;
+      showError(msg);
+      return;
     }
 
-    resultEl.textContent = data.message || "Scan recorded successfully!";
-    
+    const msg = data.message || "Scan recorded successfully!";
+    resultEl.textContent = msg;
+    showSuccess(msg);
+
   } catch (error) {
     console.error("Error sending scan:", error);
     resultEl.textContent = "Error sending scan.";
