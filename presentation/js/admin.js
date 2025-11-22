@@ -544,8 +544,9 @@ async function assignDriverToBus(bus_id) {
 window.assignDriverToBus = assignDriverToBus;
 
 
-/* ---------- Live Map ---------- */
+/* ---------- Live Map (Supports Multiple Buses) ---------- */
 mapboxgl.accessToken = 'pk.eyJ1IjoiaGFsYWhwc3UiLCJhIjoiY21mYTVyMDc3MWduODJpcGZibXo4Zm4ydCJ9.39r6v4E1LpxdLGQm1Y_Gfg';
+
 const map = new mapboxgl.Map({
   container: 'map',
   style: 'mapbox://styles/mapbox/streets-v11',
@@ -554,22 +555,58 @@ const map = new mapboxgl.Map({
 });
 map.addControl(new mapboxgl.NavigationControl());
 
-let busMarker = null;
+// Store ALL bus markers here
+let busMarkers = {};
+
 const socket = io();
 
+// 1) Load all buses once on page load 
+async function loadExistingBusMarkers() {
+  try {
+    const buses = await api('/api/buses/locations/all');
+    buses.forEach(b => {
+      if (!b.last_lat || !b.last_lng) return;
+
+      const el = document.createElement('div');
+      el.style.backgroundImage = 'url("/images/bus.png")';
+      el.style.backgroundSize = 'cover';
+      el.style.width = '40px';
+      el.style.height = '40px';
+      el.style.cursor = 'pointer';
+
+      busMarkers[b.bus_id] = new mapboxgl.Marker(el)
+        .setLngLat([b.last_lng, b.last_lat])
+        .addTo(map);
+    });
+  } catch (err) {
+    console.error("Failed to load initial bus markers:", err);
+  }
+}
+
+// Call it on load
+loadExistingBusMarkers();
+
+// 2) Real-time updates for ALL buses 
 socket.on('location', (data) => {
-  const { lat, lng } = data;
-  if (!busMarker) {
+  const { bus_id, lat, lng } = data;
+  if (!bus_id) return;
+
+  if (!busMarkers[bus_id]) {
     const el = document.createElement('div');
     el.style.backgroundImage = 'url("/images/bus.png")';
     el.style.backgroundSize = 'cover';
     el.style.width = '40px';
     el.style.height = '40px';
     el.style.cursor = 'pointer';
-    busMarker = new mapboxgl.Marker(el).setLngLat([lng, lat]).addTo(map);
+
+    busMarkers[bus_id] = new mapboxgl.Marker(el)
+      .setLngLat([lng, lat])
+      .addTo(map);
+
   } else {
-    busMarker.setLngLat([lng, lat]);
+    busMarkers[bus_id].setLngLat([lng, lat]);
   }
+
   map.flyTo({ center: [lng, lat], zoom: 14 });
 });
 

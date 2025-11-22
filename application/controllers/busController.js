@@ -5,7 +5,7 @@ const Student = require("../../data/models/Student");
 const Parent = require("../../data/models/Parent");
 const mongoose = require("mongoose");
 
-// --- Generate Unique Bus ID ---
+// Generate Unique Bus ID
 async function generateBusId() {
   let busId;
   let exists = true;
@@ -22,7 +22,7 @@ async function generateBusId() {
   return busId;
 }
 
-/* ---------- Create Bus ---------- */
+// Create Bus
 exports.createBus = async (req, res) => {
   try {
     const { bus_id, plate_number, capacity, driver_id } = req.body;
@@ -100,7 +100,7 @@ exports.getUnassignedBuses = async (req, res) => {
 };
 
 
-/* ---------- Assign Students to Bus ---------- */
+// Assign Students to Bus
 exports.assignStudentsToBus = async (req, res) => {
   try {
     const { bus_id, student_ids } = req.body;
@@ -196,7 +196,7 @@ exports.deleteBus = async (req, res) => {
   }
 };
 
-/* ---------- Unassign Driver From Bus ---------- */
+// Unassign Driver From Bus
 exports.unassignDriverFromBus = async (req, res) => {
   try {
     const { bus_id } = req.params;
@@ -230,7 +230,7 @@ exports.unassignDriverFromBus = async (req, res) => {
   }
 };
 
-/* ---------- Get Unassigned Drivers ---------- */
+// Get Unassigned Drivers
 exports.getUnassignedDrivers = async (req, res) => {
   try {
     const drivers = await Driver.find({ assigned_bus_id: null })
@@ -244,7 +244,7 @@ exports.getUnassignedDrivers = async (req, res) => {
   }
 };
 
-/* ---------- Assign Driver To Bus ---------- */
+// Assign Driver To Bus 
 exports.assignDriverToBus = async (req, res) => {
   try {
     const { bus_id } = req.params;
@@ -310,3 +310,15 @@ exports.getAvailableBuses = async (req, res) => {
   }
 };
 
+
+// Required for admin Multi-bus map
+
+exports.getAllBusLocations = async (req, res) => {
+  try {
+    const buses = await Bus.find({}, "bus_id plate_number last_lat last_lng").lean();
+    res.json(buses);
+  } catch (err) {
+    console.error("getAllBusLocations error:", err);
+    res.status(500).json({ error: "Failed to fetch bus locations" });
+  }
+};

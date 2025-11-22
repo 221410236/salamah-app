@@ -10,7 +10,8 @@ const {
   assignDriverToBus,
   unassignDriverFromBus,
   deleteBus,
-  getAvailableBuses
+  getAvailableBuses,
+  getAllBusLocations    
 } = require("../controllers/busController");
 
 const { requireLogin, requireRole } = require("../middleware/authMiddleware");
@@ -34,5 +35,8 @@ router.put("/buses/:bus_id/unassign-driver", requireLogin, requireRole("admin"),
 // --- Bus deletion & availability ---
 router.delete("/buses/:bus_id", requireLogin, requireRole("admin"), deleteBus);
 router.get("/available-buses", requireLogin, requireRole("admin"), getAvailableBuses);
+
+// --- Admin fetch all bus locations for map ---
+router.get("/locations/all", requireLogin, requireRole("admin"), getAllBusLocations);
 
 module.exports = router;
