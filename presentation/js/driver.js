@@ -292,23 +292,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
   //QR SCANNER
   let html5QrCode = null;
-  async function sendScan(studentId) {
-    try {
-      const response = await fetch("http://localhost:5000/api/scan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentId, busId }),
-      });
-      const data = await response.json();
-      if (!response.ok) showError(data.message || "Scan failed");
-      else showSuccess(data.message || "Scan recorded successfully!");
-      resultEl.textContent = data.message || "Scan recorded successfully!";
-    } catch (error) {
-      console.error("Error sending scan:", error);
-      resultEl.textContent = "Error sending scan.";
-      showError("Error sending scan");
+async function sendScan(studentId) {
+  try {
+    const response = await fetch("/api/scan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ studentId, busId }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      showError(data.message || "Scan failed");
+    } else {
+      showSuccess(data.message || "Scan recorded successfully!");
     }
+
+    resultEl.textContent = data.message || "Scan recorded successfully!";
+    
+  } catch (error) {
+    console.error("Error sending scan:", error);
+    resultEl.textContent = "Error sending scan.";
+    showError("Error sending scan");
   }
+}
 
   let lastScanId = null;
   function onScanSuccess(decodedText) {
