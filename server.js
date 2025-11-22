@@ -106,11 +106,20 @@ app.get("/", (req, res) => {
 
 // ========== Socket.IO ==========
 io.on("connection", (socket) => {
-  console.log("🔌 Socket connected:", socket.id);
+  console.log(" Socket connected:", socket.id);
 
   socket.on("location", (data) => {
-    socket.broadcast.emit("location", data);
+  // 1) Broadcast to all OTHER clients (parents + admins)
+  socket.broadcast.emit("location", data);
+
+  // 2) Admin map listens for this event name
+  io.emit("busLocationUpdate", {
+    lat: data.lat,
+    lng: data.lng,
+    bus_id: data.bus_id || null,   // required for multi-bus admin tracking
+    busObjectId: data.busId || null
   });
+});
 
   socket.on("disconnect", () => {
     console.log("Socket disconnected:", socket.id);
