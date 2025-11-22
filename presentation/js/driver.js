@@ -168,10 +168,16 @@ const socket = io();
 
 function sendLocation() {
   if (!navigator.geolocation) return;
+  
   navigator.geolocation.getCurrentPosition((pos) => {
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
-    const data = { lat, lng, username: me?.username, busId: me?.bus?._id };
+
+    const data = { 
+      lat, 
+      lng, 
+      bus_id: me?.bus?.bus_id 
+    };
 
     if (!driverMarker) {
       const el = document.createElement("div");
@@ -188,6 +194,7 @@ function sendLocation() {
     socket.emit("location", data);
   });
 }
+
 setInterval(sendLocation, 5000);
 sendLocation();
 
