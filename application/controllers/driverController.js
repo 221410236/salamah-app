@@ -20,7 +20,7 @@ exports.loginDriver = async (req, res) => {
       role: "driver",
       driver_id: driver.driver_id,
       username: driver.username,
-      bus_id: driver.assigned_bus_id?._id || null,
+      bus: driver.assigned_bus_id || null, 
     };
 
     // Load students on this driver's bus
