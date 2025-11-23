@@ -751,23 +751,23 @@ async function openAssignDriverModal(bus_id) {
 
 // === Load Unassigned Students ===
 async function loadUnassignedStudents() {
-const studentsData = await api("/api/admin/accounts");
- 
-  const allStudents = studentsData
-    .filter(a => a.role === "parent")
-    .flatMap(a => a.students || []);
+  try {
+    // Get unassigned students directly from the updated backend
+    const unassigned = await api("/api/buses/get-students");
 
-  
-  const unassigned = allStudents.filter(s => !s.bus_id);
+    const studentsList = document.getElementById("students-list");
+    studentsList.innerHTML = unassigned.map(s =>
+      `<label>
+        <input type="checkbox" value="${s.student_id}">
+        ${s.student_id} - ${s.name}
+      </label>`
+    ).join("<br>");
 
-  const studentsList = document.getElementById("students-list");
-  studentsList.innerHTML = unassigned.map(s =>
-    `<label>
-      <input type="checkbox" value="${s.student_id}">
-      ${s.student_id} - ${s.name}
-    </label>`
-  ).join("<br>");
+  } catch (err) {
+    console.error("Failed to load unassigned students:", err);
+  }
 }
+
 
 
 // === Load Buses ===

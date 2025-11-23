@@ -137,28 +137,18 @@ exports.assignStudentsToBus = async (req, res) => {
 
 exports.getStudents = async (req, res) => {
   try {
-    const parents = await Parent.find()
-      .populate({
-      path: "children",
-      populate: {
-        path: "assigned_bus_id",
-        select: "bus_id"
-      }
+    // Fetch only unassigned students directly from Student collection
+    const students = await Student.find({
+      $or: [
+        { assigned_bus_id: null },
+        { assigned_bus_id: { $exists: false } }
+      ]
     })
-    .lean();
+      .select("student_id name assigned_bus_id")
+      .lean();
 
-    // flatten all children
-    const students = parents.flatMap(p =>
-      (p.children || []).map(c => ({
-        student_id: c.student_id,
-        name: c.name,
-        assigned_bus_id: c.assigned_bus_id || null
-      }))
-    );
+    res.json(students);
 
-    // filter unassigned
-    const unassigned = students.filter(s => !s.assigned_bus_id);
-    res.json(unassigned);
   } catch (err) {
     console.error("getStudents error:", err);
     res.status(500).json({ error: "Failed to fetch students" });
