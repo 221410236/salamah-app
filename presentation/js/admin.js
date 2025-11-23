@@ -260,7 +260,10 @@ async function renderTables() {
     };
 
     UI.table(document.getElementById('adminsTable'),
-      [{ key: 'email', label: 'Email' }, { key: 'name', label: 'Name' }, { key: 'phone', label: 'Phone' }, { key: 'actions', label: 'Actions', render: (_, u) => act(u) }],
+      [{ key: 'email', label: 'Email' }, 
+      { key: 'name', label: 'Name' },
+      { key: 'phone', label: 'Phone' }, 
+      { key: 'actions', label: 'Actions', render: (_, u) => act(u) }],
       admins.map(u => ({ ...u, actions: '' }))
     );
 
@@ -269,7 +272,7 @@ async function renderTables() {
         { key: 'email', label: 'Email' },
         { key: 'name', label: 'Name' },
         { key: 'phone', label: 'Phone' },
-        { key: 'busId', label: 'Bus' },
+        { key: 'username', label: 'Username' },
         { key: 'students', label: 'Students', render: (_, u) => (u.students || []).map(s => `${s.name} (${s.student_id})`).join('<br>') },
         { key: 'actions', label: 'Actions', render: (_, u) => act(u) }
       ],
@@ -277,8 +280,26 @@ async function renderTables() {
     );
 
     UI.table(document.getElementById('driversTable'),
-      [{ key: 'email', label: 'Email' }, { key: 'name', label: 'Name' }, { key: 'phone', label: 'Phone' }, { key: 'busId', label: 'Bus' }, { key: 'actions', label: 'Actions', render: (_, u) => act(u) }],
-      drivers.map(u => ({ ...u, actions: '' }))
+      [
+        { key: 'email', label: 'Email' },
+        { key: 'name', label: 'Name' },
+        { key: 'phone', label: 'Phone' },
+        { key: 'username', label: 'Username' }, 
+
+        { 
+          key: "bus_id",
+          label: "Bus Assigned",
+          render: (val) => val || "—"
+        },
+
+        { key: 'actions', label: 'Actions', render: (_, u) => act(u) }
+      ],
+
+      drivers.map(d => ({
+        ...d,
+        bus_id: d.bus?.bus_id || null, 
+        actions: ''
+      }))
     );
 
   } catch (err) {
