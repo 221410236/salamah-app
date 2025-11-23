@@ -222,42 +222,56 @@ socket.on("student:absent", (data) => {
 
 // EMERGENCY NOTIFICATION
 const emergencyModal = document.getElementById("emergencyModal");
-document
-  .getElementById("sendEmergencyBtn")
-  ?.addEventListener("click", () => emergencyModal.classList.remove("hidden"));
-document
-  .getElementById("closeEmergency")
-  ?.addEventListener("click", () => emergencyModal.classList.add("hidden"));
 
-document
-  .getElementById("submitEmergency")
-  ?.addEventListener("click", async () => {
-    const type = document.getElementById("emergencyType").value;
-    const message = document.getElementById("emergencyMessage").value.trim();
-    if (!type) return showError("Please select emergency type");
+document.getElementById("sendEmergencyBtn")?.addEventListener("click", () => {
+  emergencyModal.classList.remove("hidden");
+});
 
+document.getElementById("closeEmergency")?.addEventListener("click", () => {
+  emergencyModal.classList.add("hidden");
+});
+
+document.getElementById("submitEmergency")?.addEventListener("click", async () => {
+  const type = document.getElementById("emergencyType").value;
+  const message = document.getElementById("emergencyMessage").value.trim();
+
+  if (!type) return showError("Please select emergency type");
+
+  try {
+    const res = await fetch("/api/notifications/emergency", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type,
+        message: message || type,
+        bus_id: me?.bus?._id || "unknown",
+      }),
+    });
+
+    // Supports JSON OR text responses
+    let responseMessage = "";
     try {
-      const res = await fetch("/api/notifications/emergency", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type,
-          message: message || type,
-          bus_id: me?.bus?._id || "unknown",
-        }),
-      });
-      const text = await res.text();
-      if (res.ok) {
-        showSuccess(text || "Emergency notification sent successfully");
-        emergencyModal.classList.add("hidden");
-        document.getElementById("emergencyType").value = "";
-        document.getElementById("emergencyMessage").value = "";
-      } else showError(text || "Failed to send notification");
-    } catch (err) {
-      console.error(err);
-      showError("Failed to send notification");
+      const data = await res.clone().json();
+      responseMessage = data.message || "";
+    } catch {
+      responseMessage = await res.text();
     }
-  });
+
+    if (res.ok) {
+      showSuccess(responseMessage || "Emergency notification sent successfully");
+     
+      // close + reset
+      emergencyModal.classList.add("hidden");
+      document.getElementById("emergencyType").value = "";
+      document.getElementById("emergencyMessage").value = "";
+    } else {
+      showError(responseMessage || "Failed to send notification");
+    }
+  } catch (err) {
+    console.error(err);
+    showError("Failed to send notification");
+  }
+});
 
 // QR SCANNER & BUTTON INITIALIZATION
 document.addEventListener("DOMContentLoaded", () => {
