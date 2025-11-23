@@ -250,12 +250,21 @@ document.getElementById("submitEmergency")?.addEventListener("click", async () =
 
     // Supports JSON OR text responses
     let responseMessage = "";
+    let isJson = false;
+
     try {
-      const data = await res.clone().json();
-      responseMessage = data.message || "";
-    } catch {
-      responseMessage = await res.text();
-    }
+      const text = await res.text();
+      try {
+        const parsed = JSON.parse(text);
+        responseMessage = parsed.message || "";
+        isJson = true;
+      } catch {
+        responseMessage = text; // plain text
+        }
+      } catch (err) {
+        responseMessage = "Response received";
+      }
+
 
     if (res.ok) {
       showSuccess(responseMessage || "Emergency notification sent successfully");
