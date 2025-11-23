@@ -248,39 +248,27 @@ document.getElementById("submitEmergency")?.addEventListener("click", async () =
       }),
     });
 
-    // Supports JSON OR text responses
-    let responseMessage = "";
-    let isJson = false;
-
+    // works for JSON OR text
+    let msg = await res.text();
     try {
-      const text = await res.text();
-      try {
-        const parsed = JSON.parse(text);
-        responseMessage = parsed.message || "";
-        isJson = true;
-      } catch {
-        responseMessage = text; // plain text
-        }
-      } catch (err) {
-        responseMessage = "Response received";
-      }
-
+      msg = JSON.parse(msg).message || msg;
+    } catch {}
 
     if (res.ok) {
-      showSuccess(responseMessage || "Emergency notification sent successfully");
-     
-      // close + reset
+      showSuccess(msg);
       emergencyModal.classList.add("hidden");
       document.getElementById("emergencyType").value = "";
       document.getElementById("emergencyMessage").value = "";
     } else {
-      showError(responseMessage || "Failed to send notification");
+      showError(msg);
     }
+
   } catch (err) {
     console.error(err);
     showError("Failed to send notification");
   }
 });
+
 
 // QR SCANNER & BUTTON INITIALIZATION
 document.addEventListener("DOMContentLoaded", () => {
