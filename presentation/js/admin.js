@@ -262,6 +262,7 @@ async function renderTables() {
     UI.table(document.getElementById('adminsTable'),
       [{ key: 'email', label: 'Email' }, 
       { key: 'name', label: 'Name' },
+      { key: 'username', label: 'Username' },
       { key: 'phone', label: 'Phone' }, 
       { key: 'actions', label: 'Actions', render: (_, u) => act(u) }],
       admins.map(u => ({ ...u, actions: '' }))

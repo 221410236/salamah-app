@@ -264,7 +264,7 @@ exports.getAccounts = async (req, res) => {
       .lean();
 
     const drivers = await Driver.find()
-      .populate('assigned_bus_id', 'bus_id')
+      .populate("assigned_bus_id", "bus_id plate_number") // populate real bus info
       .lean();
 
     const accounts = [];
@@ -312,15 +312,17 @@ exports.getAccounts = async (req, res) => {
     // drivers
     drivers.forEach(d =>
       accounts.push({
-        _id: d._id,
-        role: "driver",
-        id: d.driver_id,
-        email: d.email,
-        name: d.name,
-        phone: d.phone_number,
-        username: d.username || "",             
-        busId: d.assigned_bus_id?.bus_id || "—", 
-        students: []
+      _id: d._id,
+      role: "driver",
+      id: d.driver_id,
+      email: d.email,
+      name: d.name,
+      phone: d.phone_number,
+      username: d.username || "",
+      bus: d.assigned_bus_id
+        ? { bus_id: d.assigned_bus_id.bus_id }
+        : null,
+      students: []
       })
     );
 
