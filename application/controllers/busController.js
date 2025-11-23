@@ -137,7 +137,15 @@ exports.assignStudentsToBus = async (req, res) => {
 
 exports.getStudents = async (req, res) => {
   try {
-    const parents = await Parent.find().populate("children").lean();
+    const parents = await Parent.find()
+      .populate({
+      path: "children",
+      populate: {
+        path: "assigned_bus_id",
+        select: "bus_id"
+      }
+    })
+    .lean();
 
     // flatten all children
     const students = parents.flatMap(p =>

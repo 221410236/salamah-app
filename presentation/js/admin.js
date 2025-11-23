@@ -758,7 +758,9 @@ const studentsData = await api("/api/admin/accounts");
     .flatMap(a => a.students || []);
 
   
-  const unassigned = allStudents.filter(s => !s.assigned_bus_id);
+  const unassigned = allStudents.filter(s => {
+    return !s.assigned_bus_id || s.assigned_bus_id === null;
+  });
 
   const studentsList = document.getElementById("students-list");
   studentsList.innerHTML = unassigned.map(s =>
