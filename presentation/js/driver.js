@@ -137,7 +137,7 @@ async function drawRoute(waypoints) {
           .setLngLat(Array.isArray(stop) ? stop : [stop.lng, stop.lat])
           .setPopup(
             new mapboxgl.Popup().setText(
-              `Stop #${i + 1}\n${(stop.names || []).join(" & ")}`
+              `Stop #${i + 1}\n${(stop.names || []).filter(n => n).join(" & ")}`
             )
           )
           .addTo(map);
