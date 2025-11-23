@@ -75,7 +75,6 @@ require("./data/models/Driver");
 require("./data/models/Parent");
 require("./data/models/Student");
 require("./data/models/Bus");
-require("./data/models/Location");
 
 // ========== Import Routes ==========
 const adminRoutes = require("./application/routes/adminRoutes");
