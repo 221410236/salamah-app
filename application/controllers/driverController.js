@@ -61,18 +61,34 @@ exports.getDriverRoute = async (req, res) => {
     }).populate("parent_id", "home_coordinates");
 
     // Exclude students who are absent today
-    const waypoints = students
-      .filter(
-        (s) =>
-          s.parent_id?.home_coordinates?.coordinates &&
-          !isAbsent(s.student_id)
-      )
-      .map((s) => ({
-        lng: s.parent_id.home_coordinates.coordinates[0],
-        lat: s.parent_id.home_coordinates.coordinates[1],
-        student_id: s.student_id,
-        name: s.name,
-      }));
+    // 1. Group students by coordinates (siblings -> same stop)
+    const groups = {}; // key = "lng,lat"
+    students.forEach((s) => {
+      const coords = s.parent_id?.home_coordinates?.coordinates;
+      if (!coords) return;
+      const key = `${coords[0]},${coords[1]}`;
+      if (!groups[key]) {
+        groups[key] = {
+          lng: coords[0],
+          lat: coords[1],
+          students: [],
+        };
+      }
+      groups[key].students.push(s);
+    });
+
+    // 2. Keep stop if at least one sibling is NOT absent
+    const waypoints = Object.values(groups)
+    .filter((group) =>
+      group.students.some((s) => !isAbsent(s.student_id))
+  )
+  .map((group) => ({
+    lng: group.lng,
+    lat: group.lat,
+    student_ids: group.students.map((s) => s.student_id),
+    names: group.students.map((s) => s.name),
+  }));
+
 
     if (waypoints.length === 0)
       return res.status(404).json({
