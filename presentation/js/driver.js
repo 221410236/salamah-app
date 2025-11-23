@@ -49,37 +49,31 @@ if (!me) {
 
         // wrap drawRoute to skip absent students automatically
         const originalDrawRoute = drawRoute;
-
-drawRoute = async (waypoints) => {
-
-  // 1) Remove only absent students from each stop
-  const cleaned = waypoints
-    .map(wp => {
-      if (!wp.student_ids) return wp;
-
-      const newIds = [];
-      const newNames = [];
-
-      wp.student_ids.forEach((id, idx) => {
-        if (!absentIds.includes(id)) {
-          newIds.push(id);
-          newNames.push(wp.names[idx]);
-        }
-      });
-
-      return {
-        ...wp,
-        student_ids: newIds,
-        names: newNames,
-      };
-    })
-    // 2) Remove whole stop only if ALL students absent
-    .filter(wp => wp.student_ids.length > 0);
-
-  console.log("After cleaning absent students:", cleaned);
-
-  await originalDrawRoute(cleaned);
-};
+        
+        drawRoute = async (waypoints) => {
+          // 1) Remove only absent students from each stop
+          const cleaned = waypoints
+          .map(wp => {
+            if (!wp.student_ids) return wp;
+            const newIds = [];
+            const newNames = [];
+            wp.student_ids.forEach((id, idx) => {
+              if (!absentIds.includes(id)) {
+                newIds.push(id);
+                newNames.push(wp.names[idx]);
+              }
+            });
+            return {
+              ...wp,
+              student_ids: newIds,
+              names: newNames,
+            };
+          })
+          // 2) Remove whole stop only if ALL students absent
+          .filter(wp => wp.student_ids.length > 0);
+          console.log("After cleaning absent students:", cleaned);
+          await originalDrawRoute(cleaned);
+        };
 
       })
       .catch(err => console.error("Error fetching absences:", err));

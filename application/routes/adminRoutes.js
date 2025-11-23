@@ -55,7 +55,7 @@ router.post("/students", requireLogin, requireRole("admin"), async (req, res) =>
   try {
     const { student_id, name, parent_id, assigned_bus_id, home_location_id } = req.body;
 
-    // 🧩 Create the new student
+    // Create the new student
     const newStudent = new Student({
       student_id,
       name,
@@ -64,7 +64,7 @@ router.post("/students", requireLogin, requireRole("admin"), async (req, res) =>
       home_location_id
     });
 
-    // 🪄Generate QR code containing the student_id
+    // Generate QR code containing the student_id
     const qrData = await QRCode.toDataURL(student_id); // Base64 QR image
     newStudent.qr_code = qrData;
 

@@ -231,7 +231,7 @@ exports.createParent = async (req, res) => {
           assigned_bus_id: child.assigned_bus_id || null
         });
 
-        // 🧠 Generate card with QR code and attach URL
+        // Generate card with QR code and attach URL
         const cardUrl = await cardService.generateStudentCard(student);
         student.card_url = cardUrl;
 
@@ -361,14 +361,14 @@ exports.addChildToParent = async (req, res) => {
     const parent = await Parent.findById(parentId);
     if (!parent) return res.status(404).json({ error: "Parent not found" });
 
-    // ✅ Create new student record
+    // Create new student record
     const student = new Student({
       student_id,
       name,
       parent_id: parent._id
     });
 
-    // 🧠 Generate a QR card right away (with empty bus & driver)
+    // Generate a QR card right away (with empty bus & driver)
     const cardUrl = await cardService.generateStudentCard({
       student_id,
       name,
@@ -376,7 +376,7 @@ exports.addChildToParent = async (req, res) => {
       driver_name: "N/A"
     });
 
-    // ✅ Attach the generated card URL and save
+    // Attach the generated card URL and save
     student.card_url = cardUrl;
     await student.save();
 
