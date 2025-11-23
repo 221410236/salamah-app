@@ -437,30 +437,3 @@ input,select{background:#fff;border:1px solid var(--border);border-radius:8px;co
   color: #007cbf;        /* Blue */
   font-weight: 700;      /* Bold */
 }
-/* Fix .kv overflow on phones */
-@media (max-width: 600px) {
-  .kv {
-    grid-template-columns: 1fr; /* Stack vertically */
-  }
-}
-
-/* Fix QR cards overflowing horizontally */
-@media (max-width: 600px) {
-  .qr-cards-grid {
-    grid-template-columns: 1fr; /* One card per row */
-  }
-
-  .qr-card img {
-    width: 100%;
-    height: auto;
-    max-width: 220px; /* safe limit */
-    margin: 0 auto;
-  }
-}
-
-/* Ensure container never overflows */
-.container {
-  max-width: min(1100px, 100%);
-  overflow-x: hidden; /* safety */
-}
-
