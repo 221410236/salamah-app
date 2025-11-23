@@ -274,7 +274,7 @@ async function renderTables() {
         { key: 'name', label: 'Name' },
         { key: 'phone', label: 'Phone' },
         { key: 'username', label: 'Username' },
-        { key: 'students', label: 'Students', render: (_, u) => (u.students || []).map(s => `${s.name} (${s.student_id})`).join('<br>') },
+        { key: 'students', label: 'Students', render: (_, u) => (u.students || []).map(s => `${s.name} – ${s.bus_id || " "}`).join('<br>') },
         { key: 'actions', label: 'Actions', render: (_, u) => act(u) }
       ],
       parents.map(u => ({ ...u, actions: '' }))

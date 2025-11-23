@@ -289,8 +289,8 @@ exports.getAccounts = async (req, res) => {
       const students = (p.children || []).map(c => ({
         student_id: c.student_id,
         name: c.name,
-        assigned_bus_id: c.assigned_bus_id?.bus_id || null   
-      }));
+        bus_id: c.assigned_bus_id?.bus_id || "—"
+    }));
 
       // Parent-level busId (from child)
       const busId =
@@ -303,8 +303,7 @@ exports.getAccounts = async (req, res) => {
         email: p.email,
         name: p.name,
         phone: p.phone_number,
-        username: p.username || "",  
-        busId,
+        username: p.username, 
         students
       });
     });
