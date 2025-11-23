@@ -256,22 +256,73 @@ exports.createParent = async (req, res) => {
 exports.getAccounts = async (req, res) => {
   try {
     const admins = await Admin.find().lean();
-    const parents = await Parent.find().populate('children').lean();
-    const drivers = await Driver.find().lean();
+    const parents = await Parent.find()
+      .populate({
+        path: 'children',
+        populate: { path: 'assigned_bus_id', select: 'bus_id' } 
+      })
+      .lean();
+
+    const drivers = await Driver.find()
+      .populate('assigned_bus_id', 'bus_id')
+      .lean();
 
     const accounts = [];
 
-    admins.forEach(a => accounts.push({
-     _id: a._id, role: 'admin', id: a.admin_id, email: a.email, name: a.name, phone: a.phone_number || '', busId: null, students: []
-    }));
+    // admins 
+    admins.forEach(a =>
+      accounts.push({
+        _id: a._id,
+        role: "admin",
+        id: a.admin_id,
+        email: a.email,
+        name: a.name,
+        phone: a.phone_number || "",
+        username: a.username || "",       
+        busId: null,
+        students: []
+      })
+    );
 
+   // parents
     parents.forEach(p => {
-      const students = (p.children || []).map(c => ({ student_id: c.student_id, name: c.name, assigned_bus_id: c.assigned_bus_id || null }));
-      const busId = students.length > 0 ? students[0].assigned_bus_id : null;
-      accounts.push({_id: p._id, role: 'parent', id: p.parent_id, email: p.email, name: p.name, phone: p.phone_number, busId, students });
+      const students = (p.children || []).map(c => ({
+        student_id: c.student_id,
+        name: c.name,
+        assigned_bus_id: c.assigned_bus_id?.bus_id || null   
+      }));
+
+      // Parent-level busId (from child)
+      const busId =
+        students.length > 0 ? students[0].assigned_bus_id : null;
+
+      accounts.push({
+        _id: p._id,
+        role: "parent",
+        id: p.parent_id,
+        email: p.email,
+        name: p.name,
+        phone: p.phone_number,
+        username: p.username || "",  
+        busId,
+        students
+      });
     });
 
-    drivers.forEach(d => accounts.push({ _id: d._id, role: 'driver', id: d.driver_id, email: d.email, name: d.name, phone: d.phone_number, busId: d.assigned_bus_id || null, students: [] }));
+    // drivers
+    drivers.forEach(d =>
+      accounts.push({
+        _id: d._id,
+        role: "driver",
+        id: d.driver_id,
+        email: d.email,
+        name: d.name,
+        phone: d.phone_number,
+        username: d.username || "",             
+        busId: d.assigned_bus_id?.bus_id || "—", 
+        students: []
+      })
+    );
 
     res.json(accounts);
   } catch (err) {
@@ -467,7 +518,7 @@ exports.getAllStudentsWithCards = async (req, res) => {
 };
 
 
-// ====================== View Attendance Logs with Pagination ======================
+//  View Attendance Logs with Pagination
 exports.viewAttendanceLogs = async (req, res) => {
   try {
     // Pagination parameters (default: page 1, 20 logs per page)
