@@ -833,6 +833,7 @@ async function assignStudents() {
     const res = await api("/api/buses/assign-students-bus", "POST", { bus_id, student_ids });
     showSuccess(res.message || "Assigned successfully");
 
+    await new Promise(res => setTimeout(res, 200));
     await loadAssignStudentsTab();
   } catch (err) {
     console.error("Assign error:", err);
