@@ -51,7 +51,7 @@ if (!me) {
         const originalDrawRoute = drawRoute;
         drawRoute = async (waypoints) => {
           const filtered = waypoints.filter(wp =>
-            !(wp.student_ids || []).some(id => absentIds.includes(id))
+            (wp.student_ids || []).some(id => !absentIds.includes(id))
           );
           console.log("Filtering out absent students:", absentIds);
           await originalDrawRoute(filtered);
