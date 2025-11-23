@@ -50,14 +50,16 @@ if (!me) {
         // wrap drawRoute to skip absent students automatically
         const originalDrawRoute = drawRoute;
         drawRoute = async (waypoints) => {
-          const filtered = waypoints.filter(wp => !absentIds.includes(wp.student_id));
+          const filtered = waypoints.filter(wp =>
+            !(wp.student_ids || []).some(id => absentIds.includes(id))
+          );
           console.log("Filtering out absent students:", absentIds);
           await originalDrawRoute(filtered);
         };
       })
       .catch(err => console.error("Error fetching absences:", err));
+    }
   }
-}
 
 //  MAPBOX INITIALIZATION
 mapboxgl.accessToken =
@@ -209,12 +211,21 @@ socket.on("student:absent", (data) => {
     row.style.fontWeight = "bold";
   }
 
-  // remove marker and redraw
-  if (window.activeRouteData && Array.isArray(window.activeRouteData.waypoints)) {
-    const updated = window.activeRouteData.waypoints.filter(wp => wp.student_id !== studentId);
-    window.activeRouteData.waypoints = updated;
-    drawRoute(updated);
+  // REMOVE ONLY THE ABSENT CHILD FROM SIBLING GROUP
+  let updated = window.activeRouteData.waypoints.map(wp => {
+    if ((wp.student_ids || []).includes(studentId)) {
+    const index = wp.student_ids.indexOf(studentId);
+    wp.student_ids.splice(index, 1);
+    wp.names.splice(index, 1);
   }
+  return wp;
+});
+
+// remove the whole stop only if no siblings left
+updated = updated.filter(wp => wp.student_ids.length > 0);
+
+window.activeRouteData.waypoints = updated;
+drawRoute(updated);
 
   showToast(`${studentName} marked absent — route updated`);
 });
@@ -294,6 +305,23 @@ document.addEventListener("DOMContentLoaded", () => {
       window.activeRouteData = { waypoints: data.waypoints };
       await drawRoute(data.waypoints);
       showSuccess("Route loaded successfully!");
+    // Update student table with correct stop numbers
+    const students = me.students || [];
+    const wpList = data.waypoints;
+    
+    students.forEach(s => {
+      const row = document.querySelector(`#studentsTable tr[data-student-id="${s.student_id}"]`);
+      if (!row) return;
+      // find which waypoint contains this student's ID
+      const stopIndex = wpList.findIndex(w => (w.student_ids || []).includes(s.student_id));
+      
+      if (stopIndex !== -1) {
+        row.cells[2].innerText = `Stop #${stopIndex + 1}`;
+      } else {
+        row.cells[2].innerText = `Absent`;
+      }
+    });
+
     } catch (err) {
       console.error(err);
       showError("Error creating route.");
