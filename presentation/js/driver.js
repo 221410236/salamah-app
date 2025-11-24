@@ -385,24 +385,25 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   }
 
-  let lastScanId = null;
+  let lastScanTime = 0;
+
   function onScanSuccess(decodedText) {
-    if (decodedText === lastScanId) return;
-    lastScanId = decodedText;
-    setTimeout(() => (lastScanId = null), 800);
+  const now = Date.now();
 
-    if (html5QrCode?.isScanning) try { html5QrCode.pause(true); } catch (_) {}
+  // Ignore scans that come within 1200ms
+  if (now - lastScanTime < 1200) return;
+  lastScanTime = now;
 
-    let studentId = decodedText;
-    try {
-      const parsed = JSON.parse(decodedText);
-      if (parsed?.student_id) studentId = parsed.student_id;
-    } catch (_) {}
+  let studentId = decodedText;
+  try {
+    const parsed = JSON.parse(decodedText);
+    if (parsed?.student_id) studentId = parsed.student_id;
+  } catch {}
 
-    resultEl.textContent = `Scanned student ID: ${studentId}`;
-    sendScan(studentId);
-    try { html5QrCode.resume(); } catch (_) {}
-  }
+  resultEl.textContent = `Scanned student ID: ${studentId}`;
+  sendScan(studentId);
+}
+
 
   openBtn?.addEventListener("click", () => {
     qrModal.classList.remove("hidden");
