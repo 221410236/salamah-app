@@ -82,37 +82,6 @@ exports.sendEmergencyNotification = async (req, res) => {
       receivers,
     });
 
-    // ========== SEND EMAIL TO ADMINS ==========
-    for (const admin of admins) {
-  if (admin.email) {
-    await sendEmail(
-      admin.email,
-      `Emergency Alert - ${type.toUpperCase()}`,
-      `
-      <h2>🚨 Emergency Alert: ${type.toUpperCase()}</h2>
-      <p>${message}</p>
-      <p><strong>Bus:</strong> ${bus_id}</p>
-      <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
-      `
-    );
-  }
-    }
-
-// ========== SEND EMAIL TO PARENTS ==========
-    for (const p of parents) {
-  if (p.email) {
-    await sendEmail(
-      p.email,
-      `Emergency Alert for Your Child's Bus`,
-      `
-      <h2>🚨 Emergency Alert: ${type.toUpperCase()}</h2>
-      <p>${message}</p>
-      <p><strong>Bus:</strong> ${bus_id}</p>
-      <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
-      `
-    );
-  }
-    }
 
     return res.status(200).json({
       success: true,
