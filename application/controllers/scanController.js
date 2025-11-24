@@ -22,10 +22,22 @@ exports.logScan = async (req, res) => {
 
     // Determine Scan Context 
     // Find today's time window (to group scans per day)
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
+    // Fix timezone mismatch (Render runs in UTC)
+    const now = new Date();
+
+    const startOfDay = new Date(Date.UTC(
+  now.getUTCFullYear(),
+  now.getUTCMonth(),
+  now.getUTCDate(),
+  0, 0, 0, 0
+    ));
+
+    const endOfDay = new Date(Date.UTC(
+  now.getUTCFullYear(),
+  now.getUTCMonth(),
+  now.getUTCDate(),
+  23, 59, 59, 999
+    ));
 
     // Fetch the most recent scan for this student today
     const lastScan = await Attendance.findOne({
