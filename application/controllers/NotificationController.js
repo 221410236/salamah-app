@@ -46,7 +46,7 @@ exports.sendEmergencyNotification = async (req, res) => {
       });
     }
 
-    // Format
+    // Format message
     const formattedMessage = `[${type.toUpperCase()}] - ${message.trim()}`;
 
     const notification = await Notification.create({
@@ -55,9 +55,11 @@ exports.sendEmergencyNotification = async (req, res) => {
       type,
     });
 
+    // Resolve receivers
     const admins = await Admin.find({}).lean();
     const students = await Student.find({ assigned_bus_id: bus_id }).select("parent_id").lean();
     const parentIds = [...new Set(students.map(s => String(s.parent_id)))];
+
     const parents = parentIds.length
       ? await Parent.find({ _id: { $in: parentIds } }).lean()
       : [];
@@ -75,13 +77,58 @@ exports.sendEmergencyNotification = async (req, res) => {
       })),
     ];
 
-    let sentLog = await SentNotification.create({
+    // Save sent log
+    const sentLog = await SentNotification.create({
       sent_id: uuidv4(),
       notification_id: notification.notification_id,
       sent_at: new Date(),
       receivers,
     });
 
+    // NON-BLOCKING EMAIL SENDING 
+    setTimeout(async () => {
+      try {
+        const driver = await Driver.findOne({ assigned_bus_id: bus_id }).lean();
+
+        const subject = `🚨 Emergency Alert: ${type.toUpperCase()}`;
+        const emailHtml = `
+          <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin:auto;">
+            <h2 style="color: #d9534f;">🚨 Emergency Notification</h2>
+            <p><strong>Type:</strong> ${type.toUpperCase()}</p>
+            <p><strong>Message:</strong> ${message}</p>
+
+            <h3>🚌 Driver Details</h3>
+            <p>
+              <strong>Name:</strong> ${driver?.name || "Unknown"}<br>
+              <strong>Phone:</strong> ${driver?.phone_number || "—"}
+            </p>
+
+            ${
+              location
+                ? `<p><a href="https://maps.google.com/?q=${location.lat},${location.lng}" target="_blank">📍 View Location</a></p>`
+                : `<p>Location not available</p>`
+            }
+          </div>`;
+
+        // Loop & send emails
+        for (const r of receivers) {
+          const email =
+            r.receiver_role === "admin"
+              ? admins.find(a => a._id.toString() === r.receiver_id)?.email
+              : parents.find(p => p._id.toString() === r.receiver_id)?.email;
+
+          if (email) {
+            sendEmail(email, subject, emailHtml).catch(err =>
+              console.error("Emergency email failed:", err.message)
+            );
+          }
+        }
+      } catch (emailErr) {
+        console.error("Emergency email background error:", emailErr);
+      }
+    }, 0);
+
+    // FRONTEND RESPONSE **IMMEDIATELY**
     return res.status(200).json({
       success: true,
       message: "Emergency notification sent successfully"
@@ -92,7 +139,6 @@ exports.sendEmergencyNotification = async (req, res) => {
     return res.status(500).json({ error: "Failed to send notification" });
   }
 };
-
 
 // ================== SEND ATTENDANCE NOTIFICATION (Sprint 3)==================
 exports.sendAttendanceNotification = async (student, bus, status) => {
