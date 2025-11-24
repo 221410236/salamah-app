@@ -1,4 +1,5 @@
-//application/controllers/NotificationController.js
+// application/controllers/NotificationController.js
+
 const Notification = require("../../data/models/Notification");
 const SentNotification = require("../../data/models/SentNotification");
 const Admin = require("../../data/models/Admin");
@@ -7,12 +8,12 @@ const Student = require("../../data/models/Student");
 const Driver = require("../../data/models/Driver");
 
 const { v4: uuidv4 } = require("uuid");
-
 const { sendEmail } = require("../services/emailservice");
 
-// ================== SEND EMERGENCY (Sprint 2) ==================
-// Driver selects: delay | accident | breakdown, and provides a message.
-// We require bus_id ONLY to resolve which parents to notify (not stored).
+
+// ======================================================
+// 🚨 SEND EMERGENCY NOTIFICATION  (Sprint 2)
+// ======================================================
 exports.sendEmergencyNotification = async (req, res) => {
   try {
     const { bus_id, type, message, location } = req.body;
@@ -28,9 +29,11 @@ exports.sendEmergencyNotification = async (req, res) => {
     if (message.length < 10 || message.length > 200)
       return res.status(400).json({ error: "Message must be 10–200 chars" });
 
-    // Rate limit — last 10 minutes
+
+    // 🔥 Rate limit (10 minutes)
     const cooldown = 10 * 60 * 1000;
     const now = Date.now();
+
     const recentEmergency = await SentNotification.findOne({
       sent_at: { $gte: new Date(now - cooldown) }
     })
@@ -46,7 +49,7 @@ exports.sendEmergencyNotification = async (req, res) => {
       });
     }
 
-    // Format
+    // Save Notification
     const formattedMessage = `[${type.toUpperCase()}] - ${message.trim()}`;
 
     const notification = await Notification.create({
@@ -55,8 +58,10 @@ exports.sendEmergencyNotification = async (req, res) => {
       type,
     });
 
+    // Receivers
     const admins = await Admin.find({}).lean();
     const students = await Student.find({ assigned_bus_id: bus_id }).select("parent_id").lean();
+
     const parentIds = [...new Set(students.map(s => String(s.parent_id)))];
     const parents = parentIds.length
       ? await Parent.find({ _id: { $in: parentIds } }).lean()
@@ -75,7 +80,8 @@ exports.sendEmergencyNotification = async (req, res) => {
       })),
     ];
 
-    let sentLog = await SentNotification.create({
+    // Save Sent Notification
+    await SentNotification.create({
       sent_id: uuidv4(),
       notification_id: notification.notification_id,
       sent_at: new Date(),
@@ -83,9 +89,37 @@ exports.sendEmergencyNotification = async (req, res) => {
     });
 
 
+    // ======================================================
+    // 📧 SEND EMAIL TO ALL PARENTS (NEW + FIXED)
+    // ======================================================
+    for (const p of parents) {
+      if (!p.email) continue;
+
+      const emailHtml = `
+        <div style="font-family: Arial; padding:16px;">
+          <img src="cid:salamahlogo" style="height:70px; display:block; margin-bottom:10px;" />
+
+          <h2 style="color:#d9534f;">🚨 Emergency Notification</h2>
+
+          <p><strong>Type:</strong> ${type.toUpperCase()}</p>
+          <p><strong>Message:</strong> ${message.trim()}</p>
+          <p><strong>Bus:</strong> ${bus_id}</p>
+
+          ${location ? `<p><strong>Location:</strong> ${location}</p>` : ""}
+
+          <hr>
+          <p style="color:#777; font-size:12px;">Sent automatically by <strong>Salamah System</strong></p>
+        </div>
+      `;
+
+      await sendEmail(p.email, `Emergency: ${type}`, emailHtml);
+    }
+
+    console.log("📧 Emergency emails sent to parents");
+
     return res.status(200).json({
       success: true,
-      message: "Emergency notification sent successfully"
+      message: "Emergency notification sent successfully",
     });
 
   } catch (err) {
@@ -95,25 +129,19 @@ exports.sendEmergencyNotification = async (req, res) => {
 };
 
 
-// ================== SEND ATTENDANCE NOTIFICATION (Sprint 3)==================
+
+// ======================================================
+// 🚌 SEND ATTENDANCE NOTIFICATION (Sprint 3)
+// ======================================================
 exports.sendAttendanceNotification = async (student, bus, status) => {
   try {
-    const { v4: uuidv4 } = require("uuid");
-    const Notification = require("../../data/models/Notification");
-    const SentNotification = require("../../data/models/SentNotification");
-    const Parent = require("../../data/models/Parent");
-    const { sendEmail } = require("../services/emailservice");
-    const path = require("path");
-
-    // Create a new notification
-    const message = `Your child ${student.name} has ${status} Bus ${bus.bus_id} at ${new Date().toLocaleTimeString()}.`;
     const notification = await Notification.create({
       notification_id: uuidv4(),
-      message,
+      message: `Your child ${student.name} has ${status} Bus ${bus.bus_id} at ${new Date().toLocaleTimeString()}.`,
       type: "attendance",
     });
 
-    // Parent receiver only
+    // Parent only
     const receivers = [
       {
         receiver_id: student.parent_id._id.toString(),
@@ -122,7 +150,6 @@ exports.sendAttendanceNotification = async (student, bus, status) => {
       },
     ];
 
-    // Save the sent notification
     await SentNotification.create({
       sent_id: uuidv4(),
       notification_id: notification.notification_id,
@@ -130,38 +157,40 @@ exports.sendAttendanceNotification = async (student, bus, status) => {
       receivers,
     });
 
-    // Send email to parent with same HTML format as emergency notifications
+    // Send Email
     const parentDoc = await Parent.findById(student.parent_id);
     if (parentDoc?.email) {
       const emailHtml = `
-        <div style="font-family: Arial, sans-serif; padding: 16px;">
-          <img src="cid:salamahlogo" alt="Salamah Logo" style="height:70px; margin-bottom:10px; display:block;" />
-          <h2 style="color: #007bff;">🚌 Student Attendance Update</h2>
+        <div style="font-family: Arial; padding:16px;">
+          <img src="cid:salamahlogo" style="height:70px; display:block; margin-bottom:10px;" />
+
+          <h2 style="color:#007bff;">🚌 Student Attendance Update</h2>
 
           <p><strong>Student:</strong> ${student.name}</p>
           <p><strong>Status:</strong> ${status.toUpperCase()}</p>
           <p><strong>Bus:</strong> ${bus.bus_id}</p>
           <p><strong>Time:</strong> ${new Date().toLocaleTimeString()}</p>
 
-          <hr/>
-          <p style="font-size: 12px; color: #777;">
-            Sent automatically by <strong>Salamah System</strong>
-          </p>
+          <hr>
+          <p style="color:#777; font-size:12px;">Sent automatically by <strong>Salamah System</strong></p>
         </div>
       `;
 
       await sendEmail(parentDoc.email, "Bus Attendance Update", emailHtml);
     }
 
-    console.log(`Attendance notification sent to parent: ${student.name}`);
+    console.log(`📧 Attendance email sent for: ${student.name}`);
+
   } catch (err) {
     console.error("Error sending attendance notification:", err);
   }
 };
 
 
-// ================== ADMIN FETCH ==================
-// Returns latest notifications for an admin (merged with Notification doc)
+
+// ======================================================
+// 📥 FETCH ADMIN NOTIFICATIONS
+// ======================================================
 exports.getAdminNotifications = async (req, res) => {
   try {
     const { adminId } = req.params;
@@ -194,8 +223,11 @@ exports.getAdminNotifications = async (req, res) => {
   }
 };
 
-// ================== PARENT FETCH ==================
-// Returns latest notifications for a parent (merged with Notification doc)
+
+
+// ======================================================
+// 📥 FETCH PARENT NOTIFICATIONS
+// ======================================================
 exports.getParentNotifications = async (req, res) => {
   try {
     const { parentId } = req.params;
@@ -228,7 +260,11 @@ exports.getParentNotifications = async (req, res) => {
   }
 };
 
-// ================== MARK AS READ Controller ================== 
+
+
+// ======================================================
+// ✔ MARK AS READ
+// ======================================================
 exports.markAsRead = async (req, res) => {
   try {
     const { sentId, receiverId } = req.params;
@@ -239,6 +275,7 @@ exports.markAsRead = async (req, res) => {
     );
 
     return res.json({ message: "Notification marked as read" });
+
   } catch (err) {
     console.error("Error marking notification as read:", err);
     return res.status(500).json({ error: "Failed to mark notification as read" });
