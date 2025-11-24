@@ -1,17 +1,14 @@
-// application/services/emailService.js
+//application/services/emailService.js
 const nodemailer = require("nodemailer");
 const path = require("path");
 
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,          // Gmail TLS port
-  secure: false,      // MUST be false for port 587
+  host: process.env.SMTP_HOST,
+  port: process.env.SMTP_PORT,
+  secure: false, 
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false, // prevent TLS errors
   },
 });
 
@@ -21,11 +18,11 @@ async function sendEmail(to, subject, html) {
       from: `"Salamah Notifications" <${process.env.EMAIL_USER}>`,
       to,
       subject,
-      html,
+      html,  
       attachments: [
         {
-          filename: "salamah logo.png",
-          path: path.join(__dirname, "../../presentation/images/salamah logo.png"),
+          filename: "salamah-logo.png",
+          path: path.join(__dirname, "../../presentation/images/salamah-logo.png"),
           cid: "salamahlogo"
         }
       ]
