@@ -366,24 +366,17 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const data = await response.json();
+    const msg = data.message || "Scan processed";
 
-    if (!response.ok) {
-      const msg = data.message || "Scan failed";
-      resultEl.textContent = msg;
-      showError(msg);
-      return;
-    }
-
-    const msg = data.message || "Scan recorded successfully!";
-    resultEl.textContent = msg;
+    // Always show popup for all three conditions:
+    // boarded, dropped off, duplicate
     showSuccess(msg);
 
   } catch (error) {
     console.error("Error sending scan:", error);
-    resultEl.textContent = "Error sending scan.";
     showError("Error sending scan");
   }
-  }
+}
 
   let lastScanTime = 0;
 
