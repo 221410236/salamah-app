@@ -1,35 +1,37 @@
-//application/services/emailService.js
-const nodemailer = require("nodemailer");
+const sgMail = require("@sendgrid/mail");
 const path = require("path");
+const fs = require("fs");
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  secure: false, 
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 async function sendEmail(to, subject, html) {
   try {
-    await transporter.sendMail({
-      from: `"Salamah Notifications" <${process.env.EMAIL_USER}>`,
+    const logoPath = path.join(
+      __dirname,
+      "../../presentation/images/salamah logo.png"   // <-- your exact file name
+    );
+
+    const msg = {
       to,
+      from: process.env.EMAIL_FROM,
       subject,
-      html,  
+      html,
       attachments: [
         {
           filename: "salamah-logo.png",
-          path: path.join(__dirname, "../../presentation/images/salamah-logo.png"),
-          cid: "salamahlogo"
-        }
-      ]
-    });
+          type: "image/png",
+          disposition: "inline",
+          content_id: "salamahlogo",
+          content: fs.readFileSync(logoPath).toString("base64"),
+        },
+      ],
+    };
+
+    await sgMail.send(msg);
     console.log(`📧 Email sent to ${to}`);
+
   } catch (err) {
-    console.error(" Failed to send email:", err);
+    console.error("❌ SendGrid email error:", err.response?.body || err);
   }
 }
 
