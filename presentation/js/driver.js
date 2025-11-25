@@ -263,30 +263,25 @@ document.getElementById("closeEmergency")?.addEventListener("click", () => {
 
 document.getElementById("submitEmergency")?.addEventListener("click", async () => {
   const type = document.getElementById("emergencyType").value;
-  const messageInput = document.getElementById("emergencyMessage").value.trim();
+  const message = document.getElementById("emergencyMessage").value.trim();
 
-  if (!type) return showError("Please select an emergency type");
-
-  const bus_id = me?.bus?.bus_id;
-  if (!bus_id) return showError("Bus not found. Cannot send emergency.");
-
-  const message =
-    messageInput.length >= 10
-      ? messageInput
-      : `Emergency reported: ${type}`;
+  if (!type) return showError("Please select emergency type");
 
   try {
     const res = await fetch("/api/notifications/emergency", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type, message, bus_id }),
+      body: JSON.stringify({
+        type,
+        message: message || type,
+        bus_id: me?.bus?._id || "unknown",
+      }),
     });
 
-    let text = await res.text();
-    let msg = text;
+    // works for JSON OR text
+    let msg = await res.text();
     try {
-      const parsed = JSON.parse(text);
-      msg = parsed.message || parsed.error || text;
+      msg = JSON.parse(msg).message || msg;
     } catch {}
 
     if (res.ok) {
@@ -299,10 +294,12 @@ document.getElementById("submitEmergency")?.addEventListener("click", async () =
     }
 
   } catch (err) {
-    console.error("Emergency error:", err);
-    showError("Failed to send emergency notification");
+    console.error(err);
+    showError("Failed to send notification");
   }
 });
+
+
 
 
 // QR SCANNER & BUTTON INITIALIZATION
